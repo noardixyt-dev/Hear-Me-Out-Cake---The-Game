@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hear Me Out Board - Party Game</title>
+    <title>Hear Me Out - Liquid Glass Party Game</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -14,284 +13,1555 @@
                 extend: {
                     colors: {
                         brand: {
-                            50: '#f0f9ff',
-                            500: '#0284c7',
-                            600: '#0369a1',
-                            900: '#0c4a6e'
+                            coral: '#ff5e62',
+                            violet: '#8b5cf6',
+                            amber: '#f59e0b'
                         }
                     },
                     animation: {
-                        'slam': 'slamIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                        'shake': 'shake 0.3s ease-in-out'
+                        'pulse-glow': 'pulseGlow 3s infinite alternate',
+                        'pop-in': 'popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'float': 'float 6s ease-in-out infinite'
                     },
                     keyframes: {
-                        slamIn: {
-                            '0%': { opacity: '0', transform: 'scale(2.5) rotate(-10deg)', filter: 'blur(10px)' },
-                            '70%': { transform: 'scale(0.95) rotate(2deg)', filter: 'blur(0px)' },
-                            '100%': { opacity: '1', transform: 'scale(1) rotate(0deg)' }
+                        pulseGlow: {
+                            '0%': { boxShadow: '0 0 25px rgba(255, 255, 255, 0.05)' },
+                            '100%': { boxShadow: '0 0 40px rgba(255, 255, 255, 0.15)' }
                         },
-                        shake: {
-                            '0%, 100%': { transform: 'translateX(0)' },
-                            '25%': { transform: 'translateX(-4px) translateY(2px)' },
-                            '75%': { transform: 'translateX(4px) translateY(-2px)' }
+                        popIn: {
+                            '0%': { opacity: '0', transform: 'scale(0.95) translateY(12px)' },
+                            '100%': { opacity: '1', transform: 'scale(1) translateY(0)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' }
                         }
                     }
                 }
             }
         }
     </script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap');
+        
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
+            background-color: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
         }
-        .board-grid {
-            background-image: radial-gradient(#334155 1px, transparent 1px);
-            background-size: 24px 24px;
+
+        .font-meme { font-family: 'Space Grotesk', sans-serif; }
+
+        .liquid-glass {
+            background: rgba(18, 18, 22, 0.65);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.15);
         }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-100px) scale(1.4); }
+
+        .liquid-card {
+            background: rgba(26, 26, 32, 0.5);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        .floating-emoji {
-            position: absolute;
-            pointer-events: none;
-            animation: floatUp 1.2s ease-out forwards;
-            z-index: 50;
+
+        .liquid-card:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
+
+        .whiteboard-card {
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .whiteboard-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #000000; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 999px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-white">
+<body class="flex flex-col min-h-screen justify-between relative selection:bg-white selection:text-black">
 
-    <!-- Header -->
-    <header class="w-full p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex justify-between items-center sticky top-0 z-40">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl bg-sky-500 flex items-center justify-center text-xl shadow-lg shadow-sky-500/20">
-                🔥
+    <div class="fixed top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-white/5 rounded-full blur-[140px] pointer-events-none z-0"></div>
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <header class="relative z-10 w-full px-8 py-5 flex justify-between items-center border-b border-white/10 liquid-glass">
+        <div class="flex items-center gap-3 cursor-pointer group" onclick="app.showHome()">
+            <div class="w-10 h-10 rounded-2xl bg-white text-black flex items-center justify-center font-meme font-black text-xl shadow-lg transition-transform group-hover:scale-105">
+                🗿
             </div>
-            <h1 class="text-xl font-bold tracking-tight text-white">Hear Me Out <span class="text-sky-400">Board</span></h1>
+            <div>
+                <h1 class="text-xl font-meme font-black tracking-wider text-white flex items-center gap-2">
+                    HEAR ME OUT <span class="text-slate-400 font-mono text-xs font-normal">PARTY</span>
+                </h1>
+            </div>
         </div>
-        <div id="room-badge" class="hidden px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-xs font-mono text-sky-400 font-semibold">
-            ROOM: <span id="badge-code">------</span>
+
+        <div class="flex items-center gap-4">
+            <button id="btn-toggle-sound" onclick="app.toggleSound()" class="px-4 py-2 rounded-xl liquid-card text-xs font-bold flex items-center gap-2 transition-all">
+                <i id="sound-icon" class="fa-solid fa-volume-high text-white"></i>
+                <span class="hidden md:inline">Audio</span>
+            </button>
+
+            <div id="header-user-info" class="hidden items-center gap-3 liquid-card px-4 py-1.5 rounded-full border border-white/15">
+                <div id="header-avatar-img" class="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs overflow-hidden">🎂</div>
+                <span id="header-username" class="font-bold text-xs text-white">---</span>
+                <span id="room-code-badge" class="bg-white/10 text-white font-mono font-bold px-2.5 py-0.5 rounded-full text-[10px] border border-white/20">----</span>
+            </div>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="flex-grow container mx-auto p-4 md:p-6 flex flex-col items-center justify-center">
-
-        <!-- LOBBY / SETUP -->
-        <section id="view-setup" class="w-full max-w-md bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5">
-            <h2 class="text-2xl font-bold text-center">Profil & Raum</h2>
+    <main class="relative z-10 flex-grow container mx-auto p-4 md:p-8 flex flex-col justify-center items-center">
+        
+        <section id="view-main-menu" class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-6 animate-pop-in">
             
-            <div class="space-y-2">
-                <label class="text-xs font-semibold text-slate-400 uppercase">Dein Name</label>
-                <input type="text" id="username-input" placeholder="z. B. Alex" maxlength="15" 
-                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-sky-500 transition-colors">
+            <div class="liquid-glass p-6 rounded-3xl flex flex-col justify-between space-y-6 border border-white/15 shadow-2xl">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">01. Profil</span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-4 py-2">
+                        <div id="profile-avatar-preview" class="w-28 h-28 rounded-2xl bg-black border-2 border-white/20 flex items-center justify-center text-5xl shadow-2xl overflow-hidden relative group">
+                            🗿
+                        </div>
+
+                        <div class="flex gap-2 w-full">
+                            <input type="file" id="profile-pic-file-input" accept="image/*" class="hidden">
+                            <button id="btn-upload-profile-pic" type="button" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold border border-white/10 transition-colors flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-camera"></i> Datei
+                            </button>
+                            <button id="btn-paste-clipboard-avatar" type="button" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold border border-white/10 transition-colors flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-paste"></i> Strg+V
+                            </button>
+                        </div>
+
+                        <div id="profile-emoji-grid" class="grid grid-cols-6 gap-1.5 p-2 bg-black/60 rounded-2xl border border-white/10 w-full max-h-32 overflow-y-auto"></div>
+                    </div>
+
+                    <div class="space-y-2 mt-4">
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Dein Name</label>
+                        <input type="text" id="profile-name-input" placeholder="Name eingeben..." maxlength="16" 
+                            class="w-full bg-black/80 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-white transition-all text-xs font-bold">
+                    </div>
+                </div>
+
+                <div class="text-[10px] text-slate-500 text-center font-mono">Profil wird automatisch gespeichert</div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 pt-2">
-                <button id="btn-tab-create" onclick="setMode('create')" class="py-2 rounded-xl text-sm font-bold bg-sky-500 text-white">Raum Erstellen</button>
-                <button id="btn-tab-join" onclick="setMode('join')" class="py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-400 hover:text-white">Beitreten</button>
-            </div>
+            <div class="liquid-glass p-6 rounded-3xl flex flex-col justify-between space-y-6 border border-white/15 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
 
-            <div id="panel-create" class="space-y-4">
-                <button onclick="createRoom()" class="w-full py-3 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all">
-                    Raum Starten
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">02. Pass & Play</span>
+                        <span class="text-[10px] font-mono bg-white/10 text-white px-2 py-0.5 rounded-full">Lokal</span>
+                    </div>
+
+                    <h3 class="text-xl font-meme font-black text-white">Schnelles Spiel</h3>
+                    <p class="text-xs text-slate-400 mt-1">Ein Gerät in der Runde herumreichen. Perfekt für Partys auf der Couch!</p>
+
+                    <div class="space-y-3 mt-6">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase">Gruppe (<span id="passplay-player-count">0</span>)</label>
+                            <div id="local-players-list" class="space-y-2 max-h-36 overflow-y-auto pr-1"></div>
+
+                            <div class="flex gap-2 pt-1">
+                                <input type="text" id="add-local-player-input" placeholder="Mitspieler Name..." maxlength="15"
+                                    class="flex-1 bg-black/80 border border-white/15 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-white">
+                                <button id="btn-add-local-player" class="px-4 py-2 bg-white text-black rounded-xl text-xs font-bold transition-transform active:scale-95 flex items-center gap-1">
+                                    + Add
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1 pt-2">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase">Runden</label>
+                            <select id="local-setting-rounds" class="w-full bg-black/80 border border-white/15 rounded-xl px-3 py-2 text-xs text-white font-bold focus:border-white">
+                                <option value="1">1 Runde</option>
+                                <option value="2" selected>2 Runden</option>
+                                <option value="3">3 Runden</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="btn-start-passplay" class="w-full py-4 rounded-xl font-meme font-black text-xs bg-white text-black hover:bg-slate-200 transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-2">
+                    LOKALES MATCH STARTEN <i class="fa-solid fa-play text-[10px]"></i>
                 </button>
             </div>
 
-            <div id="panel-join" class="space-y-4 hidden">
-                <input type="text" id="join-code" placeholder="6-Stelliger Code" maxlength="6" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-center font-mono uppercase text-lg text-white">
-                <button onclick="joinRoom()" class="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all">
-                    Beitreten
-                </button>
+            <div class="liquid-glass p-6 rounded-3xl flex flex-col justify-between space-y-6 border border-white/15 shadow-2xl">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">03. Online Room</span>
+                        <span class="text-[10px] font-mono bg-white/10 text-white px-2 py-0.5 rounded-full">P2P</span>
+                    </div>
+
+                    <h3 class="text-xl font-meme font-black text-white">Privates Match</h3>
+                    <p class="text-xs text-slate-400 mt-1">Erstelle deinen eigenen Raum oder tritt Freunden per Code bei.</p>
+
+                    <div class="space-y-4 mt-6">
+                        <div class="p-4 rounded-2xl border border-white/10 bg-black/40 space-y-3">
+                            <span class="text-[10px] font-bold uppercase text-slate-400">Raum Erstellen</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <select id="setting-rounds" class="bg-black border border-white/15 rounded-xl px-2.5 py-2 text-[11px] text-white font-bold">
+                                    <option value="1">1 Runde</option>
+                                    <option value="2" selected>2 Runden</option>
+                                    <option value="3">3 Runden</option>
+                                </select>
+                                <select id="setting-timer" class="bg-black border border-white/15 rounded-xl px-2.5 py-2 text-[11px] text-white font-bold">
+                                    <option value="30">30s Timer</option>
+                                    <option value="45" selected>45s Timer</option>
+                                    <option value="60">60s Timer</option>
+                                </select>
+                            </div>
+                            <button id="btn-create-room" class="w-full py-3 rounded-xl font-bold text-xs bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus-circle"></i> Raum Erstellen
+                            </button>
+                        </div>
+
+                        <div class="p-4 rounded-2xl border border-white/10 bg-black/40 space-y-2">
+                            <span class="text-[10px] font-bold uppercase text-slate-400">Raum Beitreten</span>
+                            <div class="flex gap-2">
+                                <input type="text" id="join-code-input" placeholder="6-Stelliger Code..." maxlength="6"
+                                    class="flex-1 bg-black border border-white/15 rounded-xl px-3 py-2 text-xs text-white font-mono uppercase font-bold text-center focus:border-white">
+                                <button id="btn-join-room" class="px-4 py-2 bg-white text-black rounded-xl text-xs font-bold transition-transform active:scale-95">
+                                    Join
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-[10px] text-slate-500 text-center font-mono">Keine Registrierung erforderlich</div>
+            </div>
+
+        </section>
+
+        <section id="view-waiting" class="w-full max-w-2xl flex flex-col gap-6 hidden animate-pop-in">
+            <div class="liquid-glass p-8 rounded-3xl space-y-6 border border-white/15">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-white/10 pb-6">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Raum Code</span>
+                        <div class="flex items-center gap-3">
+                            <h2 id="display-room-code" class="text-4xl font-mono font-black text-white tracking-wider">------</h2>
+                            <button id="btn-copy-code" title="Code kopieren" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-colors text-white">
+                                <i class="fa-solid fa-copy text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase">Einstellungen</span>
+                        <p id="display-room-settings" class="text-xs font-semibold text-slate-200">2 Runden • 45s Pro Zug</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center justify-between">
+                        <span>Lobby Spieler (<span id="player-count">0</span>)</span>
+                        <span class="text-xs text-slate-500 font-normal">Warte auf Mitspieler...</span>
+                    </h3>
+                    <div id="player-list-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+                </div>
+
+                <div class="pt-2 flex gap-3">
+                    <button id="btn-start-game" class="hidden flex-1 py-4 rounded-xl font-meme font-black text-xs bg-white text-black hover:bg-slate-200 transition-all shadow-xl">
+                        SPIEL JETZT STARTEN
+                    </button>
+                    <button id="btn-leave-room" class="py-3 px-6 rounded-xl font-bold text-xs bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 transition-colors">
+                        Verlassen
+                    </button>
+                </div>
             </div>
         </section>
 
-        <!-- GAMEPLAY / BOARD VIEW -->
-        <section id="view-board" class="w-full max-w-5xl flex flex-col gap-4 hidden">
-            
-            <!-- Top Controls & Timer -->
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-wrap justify-between items-center gap-4">
-                <div>
-                    <span class="text-xs text-slate-400 font-semibold uppercase">Am Zug</span>
-                    <p id="current-player-display" class="text-lg font-bold text-sky-400">---</p>
-                </div>
-
-                <!-- Timer Bar Container -->
-                <div class="flex-1 max-w-xs space-y-1">
-                    <div class="flex justify-between text-xs text-slate-400 font-mono">
-                        <span>ZEIT</span>
-                        <span id="timer-text">45s</span>
-                    </div>
-                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                        <div id="timer-bar" class="h-full bg-sky-500 transition-all duration-1000 w-full"></div>
+        <section id="view-gameplay" class="w-full max-w-6xl flex flex-col gap-4 hidden">
+            <div id="timer-bar-wrapper" class="w-full liquid-glass p-4 rounded-2xl border border-white/15 flex flex-col gap-2">
+                <div class="flex justify-between items-center text-xs font-bold">
+                    <span id="game-phase-badge" class="bg-white/10 text-white px-3 py-1 rounded-full border border-white/20 font-mono text-[10px] uppercase">
+                        CREATION PHASE
+                    </span>
+                    <span id="current-round-text" class="text-slate-400 text-xs">Runde 1 / 2</span>
+                    <div class="flex items-center gap-2 font-mono font-black text-lg text-white">
+                        <i class="fa-solid fa-clock text-xs text-slate-400"></i>
+                        <span id="turn-timer-display">45</span>s
                     </div>
                 </div>
-
-                <!-- Live Reactions Bar (Triggert KEINEN Timer-Reset) -->
-                <div class="flex items-center gap-2">
-                    <button onclick="triggerEmoji('🔥')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xl active:scale-95 transition-transform">🔥</button>
-                    <button onclick="triggerEmoji('💀')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xl active:scale-95 transition-transform">💀</button>
-                    <button onclick="triggerEmoji('😳')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xl active:scale-95 transition-transform">😳</button>
-                    <button onclick="triggerEmoji('👑')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xl active:scale-95 transition-transform">👑</button>
+                <div class="w-full bg-black h-2 rounded-full overflow-hidden border border-white/10 relative">
+                    <div id="timer-progress-fill" class="h-full bg-white transition-all duration-300 w-full rounded-full"></div>
                 </div>
             </div>
 
-            <!-- Whiteboard Area -->
-            <div id="board-canvas" class="relative board-grid bg-slate-950 border border-slate-800 rounded-3xl min-h-[420px] p-6 flex flex-wrap gap-4 items-center justify-center overflow-hidden shadow-2xl">
-                <p id="board-empty-msg" class="text-slate-600 text-sm italic">Das Board ist noch leer. Füge das erste Bild hinzu!</p>
+            <div id="creation-stage-container" class="w-full flex flex-col lg:flex-row gap-6">
+                <div class="lg:w-2/3 flex flex-col gap-4">
+                    <div id="whiteboard-stage" class="relative liquid-glass rounded-3xl p-6 min-h-[460px] flex flex-col justify-between overflow-hidden shadow-2xl border border-white/15 bg-black/80">
+                        
+                        <div class="flex justify-between items-center z-20 liquid-card px-4 py-2.5 rounded-2xl border border-white/10 mb-3">
+                            <span class="text-xs font-bold text-slate-400">Am Zug:</span>
+                            <div id="current-turn-name" class="font-meme font-bold text-white flex items-center gap-2 text-sm">
+                                <div id="current-turn-avatar" class="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-xs font-bold overflow-hidden">🗿</div>
+                                <span id="current-turn-text">---</span>
+                            </div>
+                        </div>
+
+                        <div id="board-pinboard-area" class="relative flex-1 rounded-2xl border border-dashed border-white/20 bg-black/60 p-4 min-h-[320px] flex flex-wrap items-center justify-center gap-5 overflow-y-auto max-h-[400px]">
+                            <canvas id="whiteboard-draw-canvas" class="absolute inset-0 w-full h-full cursor-crosshair rounded-2xl z-10"></canvas>
+                            <div id="cards-pin-container" class="relative z-20 w-full h-full flex flex-wrap justify-center items-center gap-4 p-2">
+                                <p id="empty-board-msg" class="text-xs text-slate-600 italic text-center pointer-events-none">
+                                    Noch keine Picks auf dem Board. Bringe deine Memes ins Spiel! 🎨
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 flex items-center justify-between gap-3 z-30 pt-2 border-t border-white/10">
+                            <div class="flex items-center gap-2 bg-black/80 p-1.5 rounded-xl border border-white/10">
+                                <button id="tool-pen" title="Stift" class="px-3 py-1.5 rounded-lg bg-white text-black text-xs font-bold flex items-center gap-1 transition-colors">
+                                    <i class="fa-solid fa-pen"></i> Stift
+                                </button>
+                                <button id="tool-eraser" title="Radierer" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white text-xs font-bold flex items-center gap-1 transition-colors">
+                                    <i class="fa-solid fa-eraser"></i> Radierer
+                                </button>
+                                <input type="color" id="draw-color-picker" value="#ffffff" title="Farbe" class="w-7 h-7 bg-transparent cursor-pointer rounded border-0">
+                                <button id="btn-clear-canvas" title="Löschen" class="p-1.5 text-slate-500 hover:text-red-400 text-xs transition-colors">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:w-1/3 flex flex-col gap-4">
+                    <div id="active-turn-box" class="liquid-glass p-6 rounded-3xl space-y-4 border border-white/15 relative">
+                        <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                            <h3 class="font-meme font-bold text-xs text-white">DEIN PICK</h3>
+                            <span class="text-[9px] font-bold bg-white text-black px-2 py-0.5 rounded-full font-mono">DU BIST DRAN</span>
+                        </div>
+
+                        <div id="drop-zone" class="border border-dashed border-white/20 hover:border-white rounded-2xl p-4 text-center cursor-pointer transition-colors relative bg-black/50 flex flex-col items-center justify-center min-h-[130px]">
+                            <input type="file" id="file-input" accept="image/*" class="hidden">
+                            <div id="preview-container" class="hidden w-full h-28 relative rounded-xl overflow-hidden">
+                                <img id="image-preview" src="" class="w-full h-full object-contain">
+                                <button id="btn-remove-img" class="absolute top-1 right-1 bg-white text-black w-6 h-6 rounded-full text-xs flex items-center justify-center font-bold">✕</button>
+                            </div>
+                            
+                            <div id="upload-placeholder" class="space-y-1">
+                                <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400"></i>
+                                <p class="text-xs font-bold text-slate-300">Bild hochladen oder reindropen</p>
+                                <button id="btn-paste-clipboard" type="button" class="px-3 py-1 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg text-[10px] font-medium text-slate-200 mt-1">
+                                    Strg+V Einfügen
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase">Meme-Badge</label>
+                            <select id="pick-badge-select" class="w-full bg-black border border-white/15 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-white">
+                                <option value="🔥 HEAR ME OUT">🔥 HEAR ME OUT</option>
+                                <option value="🗿 GIGACHAD PICK">🗿 GIGACHAD PICK</option>
+                                <option value="👑 UNSPOKEN RIZZ">👑 UNSPOKEN RIZZ</option>
+                                <option value="💀 DOWN BAD">💀 DOWN BAD</option>
+                            </select>
+                        </div>
+
+                        <div class="space-y-2">
+                            <input type="text" id="pick-name-input" placeholder="Charakter Name..." maxlength="25"
+                                class="w-full bg-black border border-white/15 rounded-xl px-3 py-2 text-xs text-white font-bold placeholder-slate-600 focus:border-white">
+                            <textarea id="pick-caption-input" placeholder="Begründung... (max. 90 Zeichen)" rows="2" maxlength="90"
+                                class="w-full bg-black border border-white/15 rounded-xl px-3 py-2 text-xs text-white font-medium placeholder-slate-600 focus:border-white resize-none"></textarea>
+                        </div>
+
+                        <button id="btn-submit-pick" class="w-full py-4 rounded-xl font-meme font-black text-xs bg-white text-black hover:bg-slate-200 transition-all shadow-xl">
+                            AUFS BOARD SLAMMEN
+                        </button>
+                    </div>
+
+                    <div id="spectator-turn-box" class="liquid-glass p-8 rounded-3xl text-center space-y-3 hidden flex-1 flex flex-col justify-center items-center border border-white/15">
+                        <div class="w-10 h-10 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-xl animate-spin text-white">⏳</div>
+                        <div>
+                            <h3 class="font-meme font-bold text-xs text-white">WARTE AUF DEN ZUG</h3>
+                            <p class="text-xs text-slate-400 mt-1"><span id="spectator-player-name" class="font-bold text-white">---</span> zeichnet gerade...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Upload Input Dock -->
-            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row gap-3 items-center">
-                <input type="file" id="image-upload" accept="image/*" class="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-500/10 file:text-sky-400 hover:file:bg-sky-500/20 cursor-pointer">
-                
-                <!-- NAME IST JETZT OPTIONAL -->
-                <input type="text" id="pick-name" placeholder="Name/Titel (Optional)" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
-                
-                <button onclick="submitPick()" class="w-full md:w-auto px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-plus"></i> Aufs Board!
-                </button>
+            <div id="voting-stage-container" class="w-full liquid-glass p-8 rounded-3xl border border-white/15 flex flex-col items-center gap-6 hidden">
+                <div class="text-center space-y-1">
+                    <span class="text-slate-400 font-mono text-[10px] uppercase tracking-widest">MAKE IT MEME VOTING</span>
+                    <h3 class="text-2xl font-meme font-black text-white">Bewerte diesen "Hear Me Out" Pick!</h3>
+                </div>
+
+                <div class="max-w-md w-full bg-black p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col items-center text-center gap-3 relative">
+                    <div class="relative w-full h-64 rounded-2xl overflow-hidden bg-black/80 border border-white/10">
+                        <img id="voting-card-img" src="" class="w-full h-full object-contain">
+                        <span id="voting-card-badge" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white text-black font-black text-[10px] px-3 py-1 rounded-full shadow-lg uppercase">
+                            🔥 HEAR ME OUT
+                        </span>
+                    </div>
+
+                    <div class="w-full space-y-1 pt-1">
+                        <h4 id="voting-card-title" class="font-meme font-black text-xl text-white">---</h4>
+                        <p id="voting-card-caption" class="text-xs text-slate-400 italic bg-white/5 p-2.5 rounded-xl border border-white/10">"---"</p>
+                    </div>
+
+                    <div class="flex items-center justify-between w-full pt-2 border-t border-white/10 text-xs">
+                        <div class="flex items-center gap-2">
+                            <div id="voting-card-author-avatar" class="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-xs font-bold overflow-hidden">🎂</div>
+                            <span id="voting-card-author-name" class="font-bold text-white">Von Spieler</span>
+                        </div>
+                        <div class="bg-white/10 px-3 py-1 rounded-full border border-white/20 text-white font-bold">
+                            Score: <span id="voting-card-current-score" class="font-mono text-sm">0</span> Pkt
+                        </div>
+                    </div>
+                </div>
+
+                <div class="w-full max-w-lg space-y-2">
+                    <p class="text-center text-[10px] text-slate-400 font-bold uppercase tracking-wider">Deine Stimme abgeben:</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <button onclick="app.castVote('HEAR_ME_OUT')" class="py-3 px-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl font-meme font-bold text-xs text-white transition-all flex flex-col items-center gap-1">
+                            <span class="text-base">🔥</span>
+                            <span>Hear Me Out (+100)</span>
+                        </button>
+                        <button onclick="app.castVote('GIGACHAD')" class="py-3 px-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl font-meme font-bold text-xs text-white transition-all flex flex-col items-center gap-1">
+                            <span class="text-base">👑</span>
+                            <span>Rizz God (+150)</span>
+                        </button>
+                        <button onclick="app.castVote('DOWN_BAD')" class="py-3 px-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl font-meme font-bold text-xs text-white transition-all flex flex-col items-center gap-1">
+                            <span class="text-base">💀</span>
+                            <span>Down Bad (+50)</span>
+                        </button>
+                        <button onclick="app.castVote('NAH_BRUH')" class="py-3 px-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl font-meme font-bold text-xs text-white transition-all flex flex-col items-center gap-1">
+                            <span class="text-base">🤡</span>
+                            <span>Nah Bruh (-50)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-gameover" class="w-full max-w-4xl flex flex-col gap-6 hidden animate-pop-in">
+            <div class="text-center space-y-1.5">
+                <h2 class="text-3xl md:text-5xl font-meme font-black text-white tracking-tight">
+                    SIEGEREHRUNG! 🎉
+                </h2>
+                <p class="text-slate-400 text-xs">Euer finales "Hear Me Out" Board mit Punktestand</p>
+            </div>
+
+            <div id="winners-podium" class="w-full liquid-glass p-6 rounded-3xl border border-white/15 flex justify-center items-end gap-4 min-h-[180px]"></div>
+
+            <div class="liquid-glass p-8 rounded-3xl space-y-6 flex flex-col items-center border border-white/15">
+                <div id="final-board-canvas-wrapper" class="w-full bg-black p-6 rounded-2xl border border-white/10 shadow-2xl flex flex-col items-center relative">
+                    <div class="absolute top-3 left-4 text-[10px] font-mono text-slate-500">HEAR ME OUT MEME BOARD • <span id="final-room-code">------</span></div>
+                    <div id="final-picks-grid" class="w-full grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6"></div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3 w-full">
+                    <button id="btn-download-board" class="flex-1 py-4 rounded-xl font-meme font-black text-xs bg-white text-black hover:bg-slate-200 transition-all shadow-xl flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-download"></i> Board Als Bild Speichern
+                    </button>
+                    <button id="btn-play-again" class="py-4 px-8 rounded-xl font-bold text-xs bg-white/10 hover:bg-white/20 text-white border border-white/15 transition-colors">
+                        Neues Spiel
+                    </button>
+                </div>
             </div>
         </section>
 
     </main>
 
+    <footer class="relative z-10 w-full p-4 text-center text-[10px] text-slate-600 border-t border-white/10 liquid-glass font-mono">
+        Hear Me Out Party • Liquid Glass Aesthetic Edition
+    </footer>
+
     <script>
-        let currentMode = 'create';
-        let timerSeconds = 45;
-        let timerInterval = null;
-        let activePickImage = null;
-
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('panel-create').classList.toggle('hidden', mode !== 'create');
-            document.getElementById('panel-join').classList.toggle('hidden', mode !== 'join');
-            document.getElementById('btn-tab-create').className = mode === 'create' ? 'py-2 rounded-xl text-sm font-bold bg-sky-500 text-white' : 'py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-400';
-            document.getElementById('btn-tab-join').className = mode === 'join' ? 'py-2 rounded-xl text-sm font-bold bg-sky-500 text-white' : 'py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-400';
-        }
-
-        function createRoom() {
-            const name = document.getElementById('username-input').value.trim() || 'Player';
-            document.getElementById('view-setup').classList.add('hidden');
-            document.getElementById('view-board').classList.remove('hidden');
-            document.getElementById('room-badge').classList.remove('hidden');
-            document.getElementById('badge-code').innerText = Math.random().toString(36).substring(2, 8).toUpperCase();
-            document.getElementById('current-player-display').innerText = name;
-            startTimer();
-        }
-
-        function joinRoom() {
-            createRoom();
-        }
-
-        function startTimer() {
-            clearInterval(timerInterval);
-            timerSeconds = 45;
-            updateTimerUI();
-            timerInterval = setInterval(() => {
-                timerSeconds--;
-                updateTimerUI();
-                if (timerSeconds <= 0) {
-                    clearInterval(timerInterval);
-                }
-            }, 1000);
-        }
-
-        function updateTimerUI() {
-            document.getElementById('timer-text').innerText = timerSeconds + 's';
-            const pct = (timerSeconds / 45) * 100;
-            const bar = document.getElementById('timer-bar');
-            bar.style.width = pct + '%';
-            if (timerSeconds <= 10) {
-                bar.className = 'h-full bg-red-500 animate-pulse transition-all duration-1000';
-            } else {
-                bar.className = 'h-full bg-sky-500 transition-all duration-1000';
+        class MemeSoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+            init() {
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            toggleSound() {
+                this.muted = !this.muted;
+                const icon = document.getElementById('sound-icon');
+                if (icon) icon.className = this.muted ? "fa-solid fa-volume-xmark text-slate-500" : "fa-solid fa-volume-high text-white";
+                return !this.muted;
+            }
+            playPop() {
+                if (this.muted) return;
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(350, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(700, this.ctx.currentTime + 0.05);
+                    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.05);
+                } catch(e) {}
+            }
+            playTick(isUrgent = false) {
+                if (this.muted) return;
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(isUrgent ? 880 : 440, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(isUrgent ? 0.1 : 0.04, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.05);
+                } catch(e) {}
+            }
+            playVote(isPositive) {
+                if (this.muted) return;
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(isPositive ? 600 : 200, now);
+                    osc.frequency.exponentialRampToValueAtTime(isPositive ? 1000 : 120, now + 0.15);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.linearRampToValueAtTime(0.001, now + 0.15);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(now + 0.15);
+                } catch(e) {}
+            }
+            playFanfare() {
+                if (this.muted) return;
+                try {
+                    this.init();
+                    const now = this.ctx.currentTime;
+                    [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+                        gain.gain.setValueAtTime(0.1, now + idx * 0.09);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.3);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start(now + idx * 0.09);
+                        osc.stop(now + idx * 0.09 + 0.3);
+                    });
+                } catch(e) {}
             }
         }
 
-        // Image Selection
-        document.getElementById('image-upload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(evt) {
-                    activePickImage = evt.target.result;
+        const sounds = new MemeSoundEngine();
+        const EMOJI_PRESETS = ['🗿', '👑', '😳', '🔥', '💀', '🤡', '🦊', '👽', '👾', '🧙', '🤠', '🤖'];
+
+        class GameApp {
+            constructor() {
+                this.userId = 'user_' + Math.random().toString(36).substring(2, 9);
+                this.peer = null;
+                this.connections = [];
+                this.hostConn = null;
+                this.broadcastChannel = null;
+                
+                this.currentRoomId = null;
+                this.isHost = false;
+                this.isPassAndPlay = false;
+
+                this.localPlayers = [];
+
+                this.playerData = {
+                    name: localStorage.getItem('hmoc_name') || '',
+                    avatarType: localStorage.getItem('hmoc_avatar_type') || 'emoji',
+                    avatarValue: localStorage.getItem('hmoc_avatar_value') || '🗿',
+                    score: 0
+                };
+
+                this.roomState = null;
+                this.timerInterval = null;
+                this.selectedImageBase64 = null;
+
+                this.isDrawing = false;
+                this.drawTool = 'pen';
+                this.drawColor = '#ffffff';
+
+                this.initApp();
+            }
+
+            initApp() {
+                this.setupEmojiGrid();
+                this.bindEvents();
+                this.setupCanvasDrawing();
+
+                if (this.playerData.name) {
+                    document.getElementById('profile-name-input').value = this.playerData.name;
+                    this.updateProfileAvatarPreview();
                 }
+
+                this.showView('view-main-menu');
+            }
+
+            toggleSound() { sounds.toggleSound(); }
+
+            setupCanvasDrawing() {
+                const canvas = document.getElementById('whiteboard-draw-canvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+
+                const resizeCanvas = () => {
+                    const rect = canvas.parentElement.getBoundingClientRect();
+                    canvas.width = rect.width;
+                    canvas.height = rect.height;
+                };
+
+                window.addEventListener('resize', resizeCanvas);
+                setTimeout(resizeCanvas, 100);
+
+                const getPos = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    return { x: clientX - rect.left, y: clientY - rect.top };
+                };
+
+                const startDraw = (e) => {
+                    this.isDrawing = true;
+                    const pos = getPos(e);
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                };
+
+                const draw = (e) => {
+                    if (!this.isDrawing) return;
+                    const pos = getPos(e);
+                    ctx.lineWidth = this.drawTool === 'eraser' ? 24 : 4;
+                    ctx.lineCap = 'round';
+                    ctx.strokeStyle = this.drawTool === 'eraser' ? '#000000' : this.drawColor;
+                    
+                    if (this.drawTool === 'eraser') {
+                        ctx.globalCompositeOperation = 'destination-out';
+                    } else {
+                        ctx.globalCompositeOperation = 'source-over';
+                    }
+
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                };
+
+                const stopDraw = () => { this.isDrawing = false; };
+
+                canvas.addEventListener('mousedown', startDraw);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDraw);
+                canvas.addEventListener('mouseleave', stopDraw);
+
+                canvas.addEventListener('touchstart', startDraw);
+                canvas.addEventListener('touchmove', draw);
+                canvas.addEventListener('touchend', stopDraw);
+
+                document.getElementById('tool-pen').onclick = () => {
+                    this.drawTool = 'pen';
+                    document.getElementById('tool-pen').className = 'px-3 py-1.5 rounded-lg bg-white text-black text-xs font-bold flex items-center gap-1 transition-colors';
+                    document.getElementById('tool-eraser').className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white text-xs font-bold flex items-center gap-1 transition-colors';
+                };
+
+                document.getElementById('tool-eraser').onclick = () => {
+                    this.drawTool = 'eraser';
+                    document.getElementById('tool-eraser').className = 'px-3 py-1.5 rounded-lg bg-white text-black text-xs font-bold flex items-center gap-1 transition-colors';
+                    document.getElementById('tool-pen').className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white text-xs font-bold flex items-center gap-1 transition-colors';
+                };
+
+                document.getElementById('draw-color-picker').onchange = (e) => { this.drawColor = e.target.value; };
+                document.getElementById('btn-clear-canvas').onclick = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    sounds.playPop();
+                };
+            }
+
+            setupEmojiGrid() {
+                const grid = document.getElementById('profile-emoji-grid');
+                grid.innerHTML = '';
+                EMOJI_PRESETS.forEach(emoji => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'text-xl p-1.5 hover:bg-white/10 rounded-lg transition-transform hover:scale-110 flex items-center justify-center';
+                    btn.innerText = emoji;
+                    btn.onclick = () => {
+                        this.playerData.avatarType = 'emoji';
+                        this.playerData.avatarValue = emoji;
+                        this.updateProfileAvatarPreview();
+                        sounds.playPop();
+                    };
+                    grid.appendChild(btn);
+                });
+            }
+
+            updateProfileAvatarPreview() {
+                const preview = document.getElementById('profile-avatar-preview');
+                if (this.playerData.avatarType === 'image') {
+                    preview.innerHTML = `<img src="${this.playerData.avatarValue}" class="w-full h-full object-cover">`;
+                } else {
+                    preview.innerText = this.playerData.avatarValue || '🗿';
+                }
+            }
+
+            renderHeaderProfile() {
+                const headerInfo = document.getElementById('header-user-info');
+                const avatarContainer = document.getElementById('header-avatar-img');
+                const usernameEl = document.getElementById('header-username');
+
+                if (this.playerData.name) {
+                    headerInfo.classList.remove('hidden');
+                    headerInfo.classList.add('flex');
+                    usernameEl.innerText = this.playerData.name;
+
+                    if (this.playerData.avatarType === 'image') {
+                        avatarContainer.innerHTML = `<img src="${this.playerData.avatarValue}" class="w-full h-full object-cover">`;
+                    } else {
+                        avatarContainer.innerText = this.playerData.avatarValue;
+                    }
+                }
+            }
+
+            bindEvents() {
+                document.getElementById('profile-name-input').oninput = (e) => {
+                    this.playerData.name = e.target.value.trim();
+                    localStorage.setItem('hmoc_name', this.playerData.name);
+                    this.renderHeaderProfile();
+                };
+
+                document.getElementById('btn-upload-profile-pic').onclick = () => document.getElementById('profile-pic-file-input').click();
+
+                document.getElementById('profile-pic-file-input').onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            this.playerData.avatarType = 'image';
+                            this.playerData.avatarValue = event.target.result;
+                            this.updateProfileAvatarPreview();
+                            sounds.playPop();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+
+                document.getElementById('btn-paste-clipboard-avatar').onclick = async () => {
+                    try {
+                        const items = await navigator.clipboard.read();
+                        for (const item of items) {
+                            for (const type of item.types) {
+                                if (type.startsWith('image/')) {
+                                    const blob = await item.getType(type);
+                                    const reader = new FileReader();
+                                    reader.onload = (e) => {
+                                        this.playerData.avatarType = 'image';
+                                        this.playerData.avatarValue = e.target.result;
+                                        this.updateProfileAvatarPreview();
+                                        sounds.playPop();
+                                    };
+                                    reader.readAsDataURL(blob);
+                                    return;
+                                }
+                            }
+                        }
+                        this.toast('Kein Bild in der Zwischenablage!', 'warning');
+                    } catch(e) {
+                        this.toast('Nutze Strg+V zum Einfügen!', 'info');
+                    }
+                };
+
+                document.getElementById('btn-add-local-player').onclick = () => this.addLocalPlayer();
+                document.getElementById('btn-start-passplay').onclick = () => this.startPassAndPlayGame();
+
+                document.getElementById('btn-create-room').onclick = () => this.createRoom();
+                document.getElementById('btn-join-room').onclick = () => this.joinRoom();
+                document.getElementById('btn-start-game').onclick = () => this.startGame();
+                document.getElementById('btn-leave-room').onclick = () => this.leaveRoom();
+                document.getElementById('btn-copy-code').onclick = () => this.copyRoomCode();
+
+                const dropZone = document.getElementById('drop-zone');
+                const fileInput = document.getElementById('file-input');
+
+                dropZone.onclick = (e) => {
+                    if (e.target.id !== 'btn-paste-clipboard' && e.target.id !== 'btn-remove-img') fileInput.click();
+                };
+
+                fileInput.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) this.handleImageFile(file);
+                };
+
+                dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('border-white'); };
+                dropZone.ondragleave = () => { dropZone.classList.remove('border-white'); };
+                dropZone.ondrop = (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('border-white');
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) this.handleImageFile(e.dataTransfer.files[0]);
+                };
+
+                document.getElementById('btn-paste-clipboard').onclick = async (e) => {
+                    e.stopPropagation();
+                    try {
+                        const items = await navigator.clipboard.read();
+                        for (const item of items) {
+                            for (const type of item.types) {
+                                if (type.startsWith('image/')) {
+                                    const blob = await item.getType(type);
+                                    this.handleImageFile(blob);
+                                    return;
+                                }
+                            }
+                        }
+                        this.toast('Kein Bild in der Zwischenablage!', 'warning');
+                    } catch (err) {
+                        this.toast('Nutze Strg+V zum Einfügen!', 'info');
+                    }
+                };
+
+                window.addEventListener('paste', (e) => {
+                    const items = e.clipboardData?.items;
+                    if (items) {
+                        for (let item of items) {
+                            if (item.type.indexOf('image') !== -1) {
+                                this.handleImageFile(item.getAsFile());
+                                break;
+                            }
+                        }
+                    }
+                });
+
+                document.getElementById('btn-remove-img').onclick = (e) => {
+                    e.stopPropagation();
+                    this.clearImagePreview();
+                };
+
+                document.getElementById('btn-submit-pick').onclick = () => this.submitPick();
+                document.getElementById('btn-download-board').onclick = () => this.downloadBoardImage();
+                document.getElementById('btn-play-again').onclick = () => this.showHome();
+            }
+
+            renderLocalPlayersList() {
+                const container = document.getElementById('local-players-list');
+                document.getElementById('passplay-player-count').innerText = this.localPlayers.length;
+
+                if (this.localPlayers.length === 0) {
+                    container.innerHTML = `<p class="text-xs text-slate-500 italic text-center p-2">Keine Mitspieler hinzugefügt</p>`;
+                    return;
+                }
+
+                container.innerHTML = this.localPlayers.map((p, idx) => `
+                    <div class="flex items-center justify-between p-2 bg-black/80 rounded-xl border border-white/10">
+                        <div class="flex items-center gap-2">
+                            <div class="w-5 h-5 rounded-full bg-white text-black flex items-center justify-center text-[10px] font-bold overflow-hidden">
+                                ${p.avatarType === 'image' ? `<img src="\${p.avatarValue}" class="w-full h-full object-cover">` : p.avatarValue}
+                            </div>
+                            <span class="text-xs font-bold text-slate-200">${p.name}</span>
+                        </div>
+                        <button onclick="app.removeLocalPlayer(${idx})" class="text-slate-500 hover:text-red-400 text-xs px-1">✕</button>
+                    </div>
+                `).join('');
+            }
+
+            addLocalPlayer() {
+                const input = document.getElementById('add-local-player-input');
+                const val = input.value.trim();
+                if (!val) {
+                    this.toast('Bitte Namen eingeben!', 'warning');
+                    return;
+                }
+
+                const randomAvatar = EMOJI_PRESETS[Math.floor(Math.random() * EMOJI_PRESETS.length)];
+                this.localPlayers.push({
+                    id: 'p_' + Date.now() + Math.random().toString(36).substring(2, 5),
+                    name: val,
+                    avatarType: 'emoji',
+                    avatarValue: randomAvatar,
+                    score: 0
+                });
+
+                input.value = '';
+                this.renderLocalPlayersList();
+                sounds.playPop();
+            }
+
+            removeLocalPlayer(idx) {
+                this.localPlayers.splice(idx, 1);
+                this.renderLocalPlayersList();
+            }
+
+            startPassAndPlayGame() {
+                if (!this.playerData.name) {
+                    this.toast('Bitte gib zuerst deinen Namen im Profil ein!', 'error');
+                    return;
+                }
+
+                const allPlayers = [
+                    { id: this.userId, name: this.playerData.name, avatarType: this.playerData.avatarType, avatarValue: this.playerData.avatarValue, score: 0 },
+                    ...this.localPlayers
+                ];
+
+                this.isPassAndPlay = true;
+                this.isHost = true;
+                const rounds = parseInt(document.getElementById('local-setting-rounds').value);
+
+                this.roomState = {
+                    code: 'LOCAL',
+                    hostId: 'local',
+                    settings: { rounds, timerSec: 45 },
+                    status: 'PLAYING',
+                    phase: 'CREATION',
+                    players: allPlayers,
+                    turnIndex: 0,
+                    votingCardIndex: 0,
+                    currentRound: 1,
+                    picks: [],
+                    updatedAt: Date.now()
+                };
+
+                this.updateUI();
+                sounds.playPop();
+            }
+
+            handleImageFile(file) {
+                if (!file.type.startsWith('image/')) {
+                    this.toast('Bitte ein Bild wählen.', 'error');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.selectedImageBase64 = e.target.result;
+                    document.getElementById('image-preview').src = this.selectedImageBase64;
+                    document.getElementById('preview-container').classList.remove('hidden');
+                    document.getElementById('upload-placeholder').classList.add('hidden');
+                    sounds.playPop();
+                };
                 reader.readAsDataURL(file);
             }
-        });
 
-        // Submit Pick onto Board
-        function submitPick() {
-            if (!activePickImage) {
-                alert("Bitte wähle zuerst ein Bild aus!");
-                return;
+            clearImagePreview() {
+                this.selectedImageBase64 = null;
+                document.getElementById('image-preview').src = '';
+                document.getElementById('preview-container').classList.add('hidden');
+                document.getElementById('upload-placeholder').classList.remove('hidden');
+                document.getElementById('file-input').value = '';
             }
 
-            const nameInput = document.getElementById('pick-name').value.trim();
-            const displayName = nameInput !== "" ? nameInput : null; // Name ist optional!
-            
-            const emptyMsg = document.getElementById('board-empty-msg');
-            if (emptyMsg) emptyMsg.remove();
+            getPeerId(code) { return 'hmoc-board-' + code.toLowerCase(); }
 
-            const canvas = document.getElementById('board-canvas');
-            
-            // Create Card Container mit der geilen Slam-In Animation
-            const card = document.createElement('div');
-            card.className = "relative bg-slate-900 border border-slate-700/60 p-3 rounded-2xl shadow-2xl flex flex-col items-center gap-2 max-w-[200px] animate-slam hover:scale-105 transition-transform duration-200 cursor-pointer group";
+            async createRoom() {
+                if (!this.playerData.name) {
+                    this.toast('Bitte gib zuerst deinen Namen ein!', 'error');
+                    return;
+                }
 
-            let nameHTML = displayName ? `<span class="text-xs font-bold text-slate-200 truncate max-w-[170px]">${displayName}</span>` : '';
+                const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+                const rounds = parseInt(document.getElementById('setting-rounds').value);
+                const timerSec = parseInt(document.getElementById('setting-timer').value);
 
-            card.innerHTML = `
-                <div class="w-40 h-40 rounded-xl overflow-hidden bg-black/40 border border-slate-800 flex items-center justify-center">
-                    <img src="${activePickImage}" class="w-full h-full object-cover">
-                </div>
-                ${nameHTML}
-            `;
+                this.isHost = true;
+                this.isPassAndPlay = false;
+                this.currentRoomId = code;
 
-            canvas.appendChild(card);
+                this.roomState = {
+                    code: code,
+                    hostId: this.userId,
+                    settings: { rounds, timerSec },
+                    status: 'WAITING',
+                    phase: 'CREATION',
+                    players: [{
+                        id: this.userId,
+                        name: this.playerData.name,
+                        avatarType: this.playerData.avatarType,
+                        avatarValue: this.playerData.avatarValue,
+                        isHost: true,
+                        score: 0
+                    }],
+                    turnIndex: 0,
+                    votingCardIndex: 0,
+                    currentRound: 1,
+                    picks: [],
+                    updatedAt: Date.now()
+                };
 
-            // Confetti Burst bei neuem Card-Drop
-            confetti({
-                particleCount: 25,
-                spread: 60,
-                origin: { y: 0.7 }
-            });
+                this.setupBroadcastChannel(code);
+                const peerId = this.getPeerId(code);
+                this.toast('Erstelle Raum...', 'info');
 
-            // Reset Input Form
-            document.getElementById('image-upload').value = '';
-            document.getElementById('pick-name').value = '';
-            activePickImage = null;
+                try {
+                    this.peer = new Peer(peerId, { debug: 1 });
+
+                    this.peer.on('open', () => {
+                        this.toast(`Raum ${code} erstellt! 🎉`, 'success');
+                        document.getElementById('room-code-badge').innerText = code;
+                        this.updateUI();
+                    });
+
+                    this.peer.on('connection', (conn) => {
+                        this.connections.push(conn);
+                        conn.on('data', (data) => this.handleHostReceivedData(conn, data));
+                        conn.on('open', () => conn.send({ type: 'STATE_UPDATE', state: this.roomState }));
+                    });
+
+                    this.peer.on('error', () => this.updateUI());
+                } catch(e) { this.updateUI(); }
+            }
+
+            async joinRoom() {
+                if (!this.playerData.name) {
+                    this.toast('Bitte gib zuerst deinen Namen ein!', 'error');
+                    return;
+                }
+
+                const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+                if (code.length !== 6) {
+                    this.toast('Code muss 6-stellig sein!', 'error');
+                    return;
+                }
+
+                this.isHost = false;
+                this.isPassAndPlay = false;
+                this.currentRoomId = code;
+                this.setupBroadcastChannel(code);
+
+                this.toast(`Verbinde mit Raum ${code}...`, 'info');
+
+                try {
+                    this.peer = new Peer({ debug: 1 });
+
+                    this.peer.on('open', () => {
+                        const targetPeerId = this.getPeerId(code);
+                        this.hostConn = this.peer.connect(targetPeerId, { reliable: true });
+
+                        this.hostConn.on('open', () => {
+                            this.toast('Verbunden! 🔥', 'success');
+                            document.getElementById('room-code-badge').innerText = code;
+                            this.hostConn.send({
+                                type: 'JOIN',
+                                player: {
+                                    id: this.userId,
+                                    name: this.playerData.name,
+                                    avatarType: this.playerData.avatarType,
+                                    avatarValue: this.playerData.avatarValue,
+                                    isHost: false,
+                                    score: 0
+                                }
+                            });
+                        });
+
+                        this.hostConn.on('data', (data) => this.handleClientReceivedData(data));
+                    });
+
+                    this.peer.on('error', () => this.toast('Raum konnte nicht gefunden werden.', 'error'));
+                } catch(e) { this.toast('Verbindungsfehler.', 'error'); }
+            }
+
+            setupBroadcastChannel(code) {
+                if (this.broadcastChannel) this.broadcastChannel.close();
+                this.broadcastChannel = new BroadcastChannel('hmoc_board_' + code);
+                this.broadcastChannel.onmessage = (event) => {
+                    if (this.isHost) this.handleHostReceivedData(null, event.data);
+                    else this.handleClientReceivedData(event.data);
+                };
+            }
+
+            handleHostReceivedData(conn, data) {
+                if (!this.roomState) return;
+
+                if (data.type === 'JOIN') {
+                    const existing = this.roomState.players.find(p => p.id === data.player.id);
+                    if (!existing) {
+                        this.roomState.players.push(data.player);
+                        this.broadcastState();
+                    }
+                } else if (data.type === 'SUBMIT_PICK') {
+                    const picks = [...(this.roomState.picks || []), data.pick];
+                    this.nextCreationTurn(picks);
+                } else if (data.type === 'CAST_VOTE') {
+                    this.processVote(data.voteType, data.pickId);
+                }
+            }
+
+            handleClientReceivedData(data) {
+                if (data.type === 'STATE_UPDATE') {
+                    this.roomState = data.state;
+                    this.updateUI();
+                }
+            }
+
+            broadcastState() {
+                if (!this.isHost || !this.roomState) return;
+                this.roomState.updatedAt = Date.now();
+                this.updateUI();
+
+                this.connections.forEach(conn => {
+                    if (conn.open) conn.send({ type: 'STATE_UPDATE', state: this.roomState });
+                });
+
+                if (this.broadcastChannel) {
+                    this.broadcastChannel.postMessage({ type: 'STATE_UPDATE', state: this.roomState });
+                }
+            }
+
+            sendToHost(actionData) {
+                if (this.isHost) {
+                    this.handleHostReceivedData(null, actionData);
+                } else if (this.hostConn && this.hostConn.open) {
+                    this.hostConn.send(actionData);
+                } else if (this.broadcastChannel) {
+                    this.broadcastChannel.postMessage(actionData);
+                }
+            }
+
+            updateUI() {
+                if (!this.roomState) return;
+
+                const { status, phase, players, settings, code, turnIndex, votingCardIndex, picks, currentRound } = this.roomState;
+
+                if (status === 'WAITING') {
+                    this.showView('view-waiting');
+                    document.getElementById('display-room-code').innerText = code;
+                    document.getElementById('display-room-settings').innerText = `${settings.rounds} Runden • ${settings.timerSec}s Pro Zug`;
+                    document.getElementById('player-count').innerText = players.length;
+
+                    const container = document.getElementById('player-list-container');
+                    container.innerHTML = players.map(p => `
+                        <div class="liquid-card p-3 rounded-2xl flex items-center gap-3 border border-white/10">
+                            <div class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-xs font-bold overflow-hidden">
+                                ${p.avatarType === 'image' ? `<img src="\${p.avatarValue}" class="w-full h-full object-cover">` : p.avatarValue}
+                            </div>
+                            <div class="overflow-hidden">
+                                <p class="font-bold text-xs text-white truncate">${p.name}</p>
+                                <span class="text-[9px] uppercase font-bold text-slate-400">${p.isHost ? '👑 Host' : 'Bereit'}</span>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    document.getElementById('btn-start-game').classList.toggle('hidden', !this.isHost);
+
+                } else if (status === 'PLAYING') {
+                    this.showView('view-gameplay');
+                    document.getElementById('current-round-text').innerText = `Runde ${currentRound} / ${settings.rounds}`;
+
+                    const creationContainer = document.getElementById('creation-stage-container');
+                    const votingContainer = document.getElementById('voting-stage-container');
+                    const phaseBadge = document.getElementById('game-phase-badge');
+
+                    if (phase === 'CREATION') {
+                        phaseBadge.innerText = 'PAINT & PITCH PHASE';
+                        creationContainer.classList.remove('hidden');
+                        votingContainer.classList.add('hidden');
+
+                        const activePlayer = players[turnIndex % players.length];
+                        const isMyTurn = this.isPassAndPlay || (activePlayer && activePlayer.id === this.userId);
+
+                        const turnAvatarEl = document.getElementById('current-turn-avatar');
+                        const turnTextEl = document.getElementById('current-turn-text');
+
+                        if (activePlayer) {
+                            turnTextEl.innerText = activePlayer.name;
+                            if (activePlayer.avatarType === 'image') {
+                                turnAvatarEl.innerHTML = `<img src="${activePlayer.avatarValue}" class="w-full h-full object-cover">`;
+                            } else {
+                                turnAvatarEl.innerText = activePlayer.avatarValue || '🗿';
+                            }
+                        }
+
+                        if (isMyTurn) {
+                            document.getElementById('active-turn-box').classList.remove('hidden');
+                            document.getElementById('spectator-turn-box').classList.add('hidden');
+                        } else {
+                            document.getElementById('active-turn-box').classList.add('hidden');
+                            document.getElementById('spectator-turn-box').classList.remove('hidden');
+                            document.getElementById('spectator-player-name').innerText = activePlayer ? activePlayer.name : '---';
+                        }
+
+                        this.renderWhiteboardCards(picks || []);
+
+                    } else if (phase === 'VOTING') {
+                        phaseBadge.innerText = 'MAKE IT MEME VOTING';
+                        creationContainer.classList.add('hidden');
+                        votingContainer.classList.remove('hidden');
+
+                        const currentVotingCard = picks[votingCardIndex];
+                        if (currentVotingCard) {
+                            document.getElementById('voting-card-img').src = currentVotingCard.image;
+                            document.getElementById('voting-card-badge').innerText = currentVotingCard.badge || '🔥 HEAR ME OUT';
+                            document.getElementById('voting-card-title').innerText = currentVotingCard.name;
+                            document.getElementById('voting-card-caption').innerText = currentVotingCard.caption ? `"${currentVotingCard.caption}"` : '"Hear me out!"';
+                            document.getElementById('voting-card-author-name').innerText = currentVotingCard.playerName;
+                            document.getElementById('voting-card-current-score').innerText = currentVotingCard.score || 0;
+
+                            const avatarEl = document.getElementById('voting-card-author-avatar');
+                            if (currentVotingCard.playerAvatarType === 'image') {
+                                avatarEl.innerHTML = `<img src="${currentVotingCard.playerAvatarValue}" class="w-full h-full object-cover">`;
+                            } else {
+                                avatarEl.innerText = currentVotingCard.playerAvatarValue || '🗿';
+                            }
+                        }
+                    }
+
+                    this.syncTimer();
+
+                } else if (status === 'FINISHED') {
+                    this.showView('view-gameover');
+                    sounds.playFanfare();
+                    confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
+                    document.getElementById('final-room-code').innerText = code;
+                    this.renderPodiumAndFinalBoard();
+                }
+            }
+
+            syncTimer() {
+                if (this.timerInterval) clearInterval(this.timerInterval);
+
+                const timerDisplay = document.getElementById('turn-timer-display');
+                const progressFill = document.getElementById('timer-progress-fill');
+
+                const totalSec = this.roomState.settings.timerSec;
+                let timeLeft = totalSec;
+
+                timerDisplay.innerText = timeLeft;
+                progressFill.style.width = '100%';
+
+                this.timerInterval = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.innerText = timeLeft;
+
+                    const percent = Math.max(0, (timeLeft / totalSec) * 100);
+                    progressFill.style.width = `${percent}%`;
+
+                    if (timeLeft <= 10 && timeLeft > 0) sounds.playTick(timeLeft <= 5);
+
+                    if (timeLeft <= 0) {
+                        clearInterval(this.timerInterval);
+                        if (this.isHost) {
+                            if (this.roomState.phase === 'CREATION') this.nextCreationTurn();
+                            else if (this.roomState.phase === 'VOTING') this.nextVotingCard();
+                        }
+                    }
+                }, 1000);
+            }
+
+            renderWhiteboardCards(picks) {
+                const container = document.getElementById('cards-pin-container');
+                const emptyMsg = document.getElementById('empty-board-msg');
+
+                if (!picks || picks.length === 0) {
+                    if (emptyMsg) emptyMsg.classList.remove('hidden');
+                    container.innerHTML = '';
+                    if (emptyMsg) container.appendChild(emptyMsg);
+                    return;
+                }
+
+                if (emptyMsg) emptyMsg.classList.add('hidden');
+                container.innerHTML = '';
+
+                picks.forEach((pick) => {
+                    const card = document.createElement('div');
+                    card.className = 'whiteboard-card liquid-card p-3 rounded-2xl border border-white/10 shadow-2xl flex flex-col items-center gap-2 cursor-pointer w-36 sm:w-40 bg-black/80';
+                    
+                    const avatarContent = pick.playerAvatarType === 'image' 
+                        ? `<img src="${pick.playerAvatarValue}" class="w-full h-full object-cover">`
+                        : pick.playerAvatarValue;
+
+                    card.innerHTML = `
+                        <div class="relative w-full h-32 rounded-xl overflow-hidden bg-black border border-white/10">
+                            <img src="${pick.image}" class="w-full h-full object-cover">
+                            <div class="absolute bottom-1 right-1 bg-white text-black font-black text-[7px] px-1.5 py-0.5 rounded uppercase">
+                                ${pick.badge || '🔥 HEAR ME OUT'}
+                            </div>
+                        </div>
+                        <div class="w-full text-center overflow-hidden">
+                            <h4 class="font-meme font-black text-xs text-white truncate">${pick.name}</h4>
+                            ${pick.caption ? `<p class="text-[10px] text-slate-400 italic truncate mt-0.5">"\${pick.caption}"</p>` : ''}
+                        </div>
+                        <div class="flex items-center gap-1.5 pt-1 border-t border-white/10 w-full justify-between px-1">
+                            <div class="flex items-center gap-1">
+                                <div class="w-4 h-4 rounded-full bg-white text-black flex items-center justify-center text-[9px] font-bold overflow-hidden">
+                                    ${avatarContent}
+                                </div>
+                                <span class="text-[10px] font-bold text-slate-300 truncate max-w-[70px]">${pick.playerName}</span>
+                            </div>
+                            <span class="text-[10px] font-mono font-bold text-white">${pick.score || 0}pt</span>
+                        </div>
+                    `;
+
+                    container.appendChild(card);
+                });
+            }
+
+            startGame() {
+                if (!this.isHost || !this.roomState) return;
+                this.roomState.status = 'PLAYING';
+                this.roomState.phase = 'CREATION';
+                this.roomState.turnIndex = 0;
+                this.roomState.votingCardIndex = 0;
+                this.roomState.currentRound = 1;
+                this.roomState.picks = [];
+                this.broadcastState();
+            }
+
+            submitPick() {
+                const nameInput = document.getElementById('pick-name-input').value.trim();
+                const captionInput = document.getElementById('pick-caption-input').value.trim();
+                const badgeInput = document.getElementById('pick-badge-select').value;
+
+                if (!this.selectedImageBase64) {
+                    this.toast('Bitte lade ein Bild für deinen Pick hoch!', 'error');
+                    return;
+                }
+
+                if (!nameInput) {
+                    this.toast('Bitte gib dem Charakter einen Namen!', 'error');
+                    return;
+                }
+
+                const activePlayer = this.roomState.players[this.roomState.turnIndex % this.roomState.players.length];
+
+                const newPick = {
+                    id: 'pick_' + Date.now() + Math.random().toString(36).substring(2, 5),
+                    playerId: activePlayer.id,
+                    playerName: activePlayer.name,
+                    playerAvatarType: activePlayer.avatarType || 'emoji',
+                    playerAvatarValue: activePlayer.avatarValue || '🗿',
+                    badge: badgeInput,
+                    name: nameInput,
+                    caption: captionInput,
+                    image: this.selectedImageBase64,
+                    score: 0,
+                    timestamp: Date.now()
+                };
+
+                document.getElementById('pick-name-input').value = '';
+                document.getElementById('pick-caption-input').value = '';
+                this.clearImagePreview();
+
+                sounds.playPop();
+
+                this.sendToHost({
+                    type: 'SUBMIT_PICK',
+                    pick: newPick
+                });
+            }
+
+            nextCreationTurn(updatedPicks) {
+                if (!this.isHost) return;
+
+                const picks = updatedPicks || this.roomState.picks || [];
+                let { turnIndex, players } = this.roomState;
+
+                turnIndex++;
+
+                if (turnIndex >= players.length) {
+                    this.roomState.phase = 'VOTING';
+                    this.roomState.votingCardIndex = 0;
+                }
+
+                this.roomState.picks = picks;
+                this.roomState.turnIndex = turnIndex;
+                this.broadcastState();
+            }
+
+            castVote(voteType) {
+                const picks = this.roomState.picks || [];
+                const currentPick = picks[this.roomState.votingCardIndex];
+                if (!currentPick) return;
+
+                sounds.playVote(voteType !== 'NAH_BRUH');
+
+                this.sendToHost({
+                    type: 'CAST_VOTE',
+                    voteType: voteType,
+                    pickId: currentPick.id
+                });
+
+                this.toast('Stimme gewertet! 🗳️', 'success');
+            }
+
+            processVote(voteType, pickId) {
+                if (!this.isHost || !this.roomState) return;
+
+                const votePoints = { HEAR_ME_OUT: 100, GIGACHAD: 150, DOWN_BAD: 50, NAH_BRUH: -50 };
+                const points = votePoints[voteType] || 50;
+
+                const pick = this.roomState.picks.find(p => p.id === pickId);
+                if (pick) {
+                    pick.score = (pick.score || 0) + points;
+                    const player = this.roomState.players.find(p => p.id === pick.playerId);
+                    if (player) player.score = (player.score || 0) + points;
+                    this.broadcastState();
+                }
+            }
+
+            nextVotingCard() {
+                if (!this.isHost) return;
+
+                let { votingCardIndex, picks, currentRound, settings } = this.roomState;
+                votingCardIndex++;
+
+                if (votingCardIndex >= picks.length) {
+                    currentRound++;
+                    if (currentRound > settings.rounds) {
+                        this.roomState.status = 'FINISHED';
+                    } else {
+                        this.roomState.phase = 'CREATION';
+                        this.roomState.turnIndex = 0;
+                        this.roomState.currentRound = currentRound;
+                    }
+                } else {
+                    this.roomState.votingCardIndex = votingCardIndex;
+                }
+
+                this.broadcastState();
+            }
+
+            renderPodiumAndFinalBoard() {
+                const podium = document.getElementById('winners-podium');
+                const players = [...(this.roomState.players || [])].sort((a, b) => (b.score || 0) - (a.score || 0));
+
+                if (players.length === 0) {
+                    podium.innerHTML = '<p class="text-xs text-slate-500">Keine Punkte vergeben.</p>';
+                    return;
+                }
+
+                const top3 = players.slice(0, 3);
+                const heights = ['h-28', 'h-20', 'h-16'];
+
+                podium.innerHTML = top3.map((p, idx) => `
+                    <div class="flex flex-col items-center gap-2">
+                        <div class="text-center">
+                            <span class="text-xs font-black text-white font-meme">${idx + 1}. Platz</span>
+                            <p class="font-bold text-xs text-slate-200 truncate max-w-[80px]">${p.name}</p>
+                            <span class="text-[10px] font-mono font-bold text-slate-400">${p.score || 0} Pkt</span>
+                        </div>
+                        <div class="${heights[idx] || 'h-16'} w-20 bg-white/10 rounded-t-2xl border border-white/20 flex items-center justify-center text-2xl shadow-xl">
+                            ${p.avatarType === 'image' ? `<img src="\${p.avatarValue}" class="w-8 h-8 rounded-full object-cover border border-white/20">` : (p.avatarValue || '🗿')}
+                        </div>
+                    </div>
+                `).join('');
+
+                const finalPicksGrid = document.getElementById('final-picks-grid');
+                const picks = this.roomState.picks || [];
+
+                finalPicksGrid.innerHTML = picks.map(p => `
+                    <div class="liquid-card p-3 rounded-2xl flex flex-col items-center text-center gap-2 border border-white/10">
+                        <div class="relative w-full h-24 rounded-xl overflow-hidden bg-black/80">
+                            <img src="${p.image}" class="w-full h-full object-cover">
+                            <span class="absolute bottom-1 left-1/2 -translate-x-1/2 bg-white text-black font-black text-[7px] px-1.5 py-0.5 rounded uppercase">
+                                ${p.badge || '🔥 HEAR ME OUT'}
+                            </span>
+                        </div>
+                        <div class="pt-1 w-full overflow-hidden">
+                            <p class="font-bold text-xs text-white truncate">${p.name}</p>
+                            ${p.caption ? `<p class="text-[10px] text-slate-400 italic truncate">"\${p.caption}"</p>` : ''}
+                            <div class="flex items-center justify-between mt-1 text-[10px] text-slate-300 font-bold">
+                                <span>Von: ${p.playerName}</span>
+                                <span class="font-mono text-white">${p.score || 0}pt</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            downloadBoardImage() {
+                const target = document.getElementById('final-board-canvas-wrapper');
+                this.toast('Erstelle Meme-Board Bild...', 'info');
+
+                html2canvas(target, {
+                    backgroundColor: '#000000',
+                    scale: 2,
+                    useCORS: true
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `HearMeOut_Board_${this.currentRoomId || 'party'}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    this.toast('Board gespeichert! 🎉', 'success');
+                }).catch(() => {
+                    this.toast('Fehler beim Export.', 'error');
+                });
+            }
+
+            showView(viewId) {
+                ['view-main-menu', 'view-waiting', 'view-gameplay', 'view-gameover'].forEach(id => {
+                    document.getElementById(id).classList.toggle('hidden', id !== viewId);
+                });
+            }
+
+            showHome() {
+                if (this.peer) this.peer.destroy();
+                if (this.broadcastChannel) this.broadcastChannel.close();
+                this.currentRoomId = null;
+                document.getElementById('room-code-badge').innerText = '----';
+                this.showView('view-main-menu');
+            }
+
+            leaveRoom() { this.showHome(); }
+
+            copyRoomCode() {
+                if (!this.currentRoomId) return;
+                const tempInput = document.createElement('input');
+                tempInput.value = this.currentRoomId;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                this.toast('Raumcode kopiert! 📋', 'success');
+                sounds.playPop();
+            }
+
+            toast(msg, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                
+                const bgColors = {
+                    success: 'bg-emerald-600 border-emerald-500',
+                    error: 'bg-red-600 border-red-500',
+                    warning: 'bg-amber-600 border-amber-500',
+                    info: 'bg-black/90 border-white/20'
+                };
+
+                toast.className = `${bgColors[type] || bgColors.info} text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold border flex items-center gap-2 animate-pop-in pointer-events-auto`;
+                toast.innerHTML = `<span>${msg}</span>`;
+
+                container.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transition = 'opacity 0.3s';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
         }
 
-        // Trigger Reactions (OHNE Timer-Reset)
-        function triggerEmoji(emoji) {
-            const canvas = document.getElementById('board-canvas');
-            const el = document.createElement('div');
-            el.className = 'floating-emoji text-3xl';
-            el.innerText = emoji;
-            
-            // Zufällige Position auf dem Board
-            const x = Math.random() * (canvas.clientWidth - 40);
-            const y = Math.random() * (canvas.clientHeight - 40);
-            
-            el.style.left = x + 'px';
-            el.style.top = y + 'px';
-
-            canvas.appendChild(el);
-
-            setTimeout(() => {
-                el.remove();
-            }, 1200);
-        }
+        window.onload = () => {
+            window.app = new GameApp();
+        };
     </script>
 </body>
 </html>
