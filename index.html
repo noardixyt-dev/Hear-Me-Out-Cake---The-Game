@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hear Me Out Cake - Party Game</title>
+    <title>Hear Me Out Board - Party Game</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,1273 +13,285 @@
             theme: {
                 extend: {
                     colors: {
-                        cake: {
-                            pink: '#ff2a85',
-                            purple: '#8b5cf6',
-                            violet: '#4c1d95',
-                            dark: '#0f0a1c',
-                            gold: '#fbbf24'
+                        brand: {
+                            50: '#f0f9ff',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            900: '#0c4a6e'
                         }
                     },
                     animation: {
-                        'pulse-glow': 'pulseGlow 2s infinite',
-                        'float': 'float 3s ease-in-out infinite',
-                        'pop-in': 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                        'confetti': 'confetti 3s ease-in-out infinite'
+                        'slam': 'slamIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'shake': 'shake 0.3s ease-in-out'
                     },
                     keyframes: {
-                        pulseGlow: {
-                            '0%, 100%': { boxShadow: '0 0 15px rgba(255, 42, 133, 0.5)' },
-                            '50%': { boxShadow: '0 0 30px rgba(255, 42, 133, 0.9)' }
+                        slamIn: {
+                            '0%': { opacity: '0', transform: 'scale(2.5) rotate(-10deg)', filter: 'blur(10px)' },
+                            '70%': { transform: 'scale(0.95) rotate(2deg)', filter: 'blur(0px)' },
+                            '100%': { opacity: '1', transform: 'scale(1) rotate(0deg)' }
                         },
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0px)' },
-                            '50%': { transform: 'translateY(-10px)' }
-                        },
-                        popIn: {
-                            '0%': { opacity: '0', transform: 'scale(0.3) translateY(40px)' },
-                            '100%': { opacity: '1', transform: 'scale(1) translateY(0)' }
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-4px) translateY(2px)' },
+                            '75%': { transform: 'translateX(4px) translateY(-2px)' }
                         }
                     }
                 }
             }
         }
     </script>
-
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- html2canvas for downloading cake -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <!-- Canvas Confetti -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-    <!-- PeerJS for WebRTC Multiplayer (Zero Config required for GitHub Pages) -->
-    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: radial-gradient(circle at center, #1e112a 0%, #0b0612 100%);
-            color: #fff;
-            min-height: 100vh;
-            overflow-x: hidden;
+            background-color: #0f172a;
+            color: #f8fafc;
         }
-
-        .font-display {
-            font-family: 'Fredoka One', cursive;
+        .board-grid {
+            background-image: radial-gradient(#334155 1px, transparent 1px);
+            background-size: 24px 24px;
         }
-
-        /* Glassmorphism effects */
-        .glass-panel {
-            background: rgba(25, 16, 38, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 42, 133, 0.2);
-        }
-
-        .glass-card {
-            background: rgba(40, 25, 60, 0.6);
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Neon outline text */
-        .neon-text-pink {
-            text-shadow: 0 0 10px #ff2a85, 0 0 20px #ff2a85;
-        }
-
-        .neon-text-purple {
-            text-shadow: 0 0 10px #8b5cf6, 0 0 20px #8b5cf6;
-        }
-
-        /* Animated Emoji Reactions floating up */
         @keyframes floatUp {
             0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-120px) scale(1.5); }
+            100% { opacity: 0; transform: translateY(-100px) scale(1.4); }
         }
-
-        .floating-reaction {
+        .floating-emoji {
             position: absolute;
             pointer-events: none;
-            animation: floatUp 1.8s ease-out forwards;
-            z-index: 100;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0f0a1c;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #8b5cf6;
-            border-radius: 4px;
+            animation: floatUp 1.2s ease-out forwards;
+            z-index: 50;
         }
     </style>
 </head>
-<body class="flex flex-col min-h-screen justify-between relative selection:bg-cake-pink selection:text-white">
+<body class="min-h-screen flex flex-col justify-between selection:bg-sky-500 selection:text-white">
 
-    <!-- Sound Effects Engine (Web Audio API) -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-    <!-- Background Animated Elements -->
-    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div class="absolute -top-20 -left-20 w-96 h-96 bg-cake-pink/20 rounded-full blur-3xl animate-pulse"></div>
-        <div class="absolute -bottom-20 -right-20 w-96 h-96 bg-cake-purple/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
-    </div>
-
-    <!-- Header Navigation -->
-    <header class="relative z-10 w-full p-4 md:p-6 flex justify-between items-center border-b border-white/10 glass-panel">
-        <div class="flex items-center gap-3 cursor-pointer" onclick="app.showHome()">
-            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cake-pink to-cake-purple flex items-center justify-center text-2xl shadow-lg shadow-cake-pink/30 animate-bounce">
-                🎂
+    <!-- Header -->
+    <header class="w-full p-4 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-sky-500 flex items-center justify-center text-xl shadow-lg shadow-sky-500/20">
+                🔥
             </div>
-            <h1 class="text-2xl md:text-3xl font-display bg-gradient-to-r from-cake-pink via-purple-300 to-cake-purple bg-clip-text text-transparent">
-                Hear Me Out <span class="text-cake-pink">Cake</span>
-            </h1>
+            <h1 class="text-xl font-bold tracking-tight text-white">Hear Me Out <span class="text-sky-400">Board</span></h1>
         </div>
-
-        <div id="header-user-info" class="hidden items-center gap-3 glass-card px-3 py-1.5 rounded-full">
-            <span id="header-avatar" class="text-xl">🎂</span>
-            <span id="header-username" class="font-bold text-sm text-purple-200">Player</span>
-            <span id="room-code-badge" class="bg-cake-pink/30 text-cake-pink text-xs font-mono font-bold px-2 py-1 rounded-full border border-cake-pink/40">----</span>
+        <div id="room-badge" class="hidden px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-xs font-mono text-sky-400 font-semibold">
+            ROOM: <span id="badge-code">------</span>
         </div>
     </header>
 
-    <!-- Main Content Container -->
-    <main class="relative z-10 flex-grow container mx-auto p-4 md:p-6 flex flex-col justify-center items-center">
-        
-        <!-- ================= LOBBY / SETUP SECTION ================= -->
-        <section id="view-lobby" class="w-full max-w-md flex flex-col gap-6 animate-pop-in">
-            <div class="text-center space-y-2">
-                <h2 class="text-3xl md:text-4xl font-display text-white">Willkommen!</h2>
-                <p class="text-purple-300 text-sm">Designet zusammen den ulitmativen "Hear Me Out" Kuchen mit euren unkonventionellsten Crushes!</p>
-            </div>
+    <!-- Main Container -->
+    <main class="flex-grow container mx-auto p-4 md:p-6 flex flex-col items-center justify-center">
 
-            <div class="glass-panel p-6 rounded-3xl shadow-2xl space-y-5">
-                <!-- User Profile setup -->
-                <div class="space-y-3">
-                    <label class="block text-xs font-bold text-purple-300 uppercase tracking-wider">Dein Profil</label>
-                    
-                    <div class="flex items-center gap-3">
-                        <button id="avatar-picker-btn" type="button" class="w-14 h-14 rounded-2xl bg-cake-purple/30 border border-cake-pink/50 flex items-center justify-center text-3xl hover:scale-105 transition-transform shadow-md">
-                            🎂
-                        </button>
-                        <input type="text" id="username-input" placeholder="Dein Spielername..." maxlength="15" 
-                            class="flex-1 bg-black/40 border border-purple-500/30 rounded-2xl px-4 py-3 text-white placeholder-purple-400/50 focus:outline-none focus:border-cake-pink transition-colors">
-                    </div>
-
-                    <!-- Avatar Preset Selector Modal / Drawer inline -->
-                    <div id="avatar-presets" class="hidden grid grid-cols-6 gap-2 p-3 bg-black/50 rounded-2xl border border-white/10 mt-2">
-                        <!-- Filled dynamically -->
-                    </div>
-                </div>
-
-                <hr class="border-white/10">
-
-                <!-- Mode Selection: Create vs Join -->
-                <div class="grid grid-cols-2 gap-3">
-                    <button id="tab-create-btn" class="py-2.5 rounded-xl font-bold text-sm bg-cake-pink text-white shadow-lg shadow-cake-pink/30 transition-all">
-                        Raum Erstellen
-                    </button>
-                    <button id="tab-join-btn" class="py-2.5 rounded-xl font-bold text-sm bg-white/5 hover:bg-white/10 text-purple-200 transition-all">
-                        Raum Beitreten
-                    </button>
-                </div>
-
-                <!-- Tab: Create Room -->
-                <div id="tab-create-content" class="space-y-4">
-                    <div class="space-y-2">
-                        <label class="block text-xs font-bold text-purple-300 uppercase">Anzahl Runden</label>
-                        <select id="setting-rounds" class="w-full bg-black/40 border border-purple-500/30 rounded-2xl px-4 py-2.5 text-white focus:outline-none focus:border-cake-pink">
-                            <option value="1">1 Runde (Schnell)</option>
-                            <option value="2" selected>2 Runden (Standard)</option>
-                            <option value="3">3 Runden (Intensiv)</option>
-                        </select>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="block text-xs font-bold text-purple-300 uppercase">Zug-Zeit (Sekunden)</label>
-                        <select id="setting-timer" class="w-full bg-black/40 border border-purple-500/30 rounded-2xl px-4 py-2.5 text-white focus:outline-none focus:border-cake-pink">
-                            <option value="30">30 Sekunden</option>
-                            <option value="45" selected>45 Sekunden</option>
-                            <option value="60">60 Sekunden</option>
-                            <option value="90">90 Sekunden</option>
-                        </select>
-                    </div>
-
-                    <button id="btn-create-room" class="w-full py-3.5 rounded-2xl font-display text-lg bg-gradient-to-r from-cake-pink to-cake-purple text-white hover:opacity-90 transition-transform active:scale-95 shadow-xl shadow-cake-pink/20 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-plus-circle"></i> Raum Starten
-                    </button>
-                </div>
-
-                <!-- Tab: Join Room -->
-                <div id="tab-join-content" class="space-y-4 hidden">
-                    <div class="space-y-2">
-                        <label class="block text-xs font-bold text-purple-300 uppercase">6-Stelliger Raumcode</label>
-                        <input type="text" id="join-code-input" placeholder="z. B. X7K2P9" uppercase maxlength="6"
-                            class="w-full bg-black/40 border border-purple-500/30 rounded-2xl px-4 py-3 text-white text-center font-mono text-xl tracking-widest placeholder-purple-400/30 focus:outline-none focus:border-cake-pink">
-                    </div>
-
-                    <button id="btn-join-room" class="w-full py-3.5 rounded-2xl font-display text-lg bg-gradient-to-r from-cake-purple to-indigo-600 text-white hover:opacity-90 transition-transform active:scale-95 shadow-xl shadow-cake-purple/20 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-right-to-bracket"></i> Beitreten
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= WAITING LOBBY SECTION ================= -->
-        <section id="view-waiting" class="w-full max-w-2xl flex flex-col gap-6 hidden animate-pop-in">
-            <div class="glass-panel p-6 md:p-8 rounded-3xl space-y-6">
-                <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-white/10 pb-6">
-                    <div>
-                        <span class="text-xs uppercase font-bold text-purple-400 tracking-wider">Raum Code</span>
-                        <div class="flex items-center gap-3">
-                            <h2 id="display-room-code" class="text-4xl font-mono font-bold text-cake-pink tracking-wider">------</h2>
-                            <button id="btn-copy-code" title="Code kopieren" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors">
-                                <i class="fa-solid fa-copy text-lg"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="text-right flex flex-col items-center md:items-end">
-                        <span class="text-xs font-bold text-purple-300">Einstellungen</span>
-                        <span id="display-room-settings" class="text-sm font-semibold text-purple-200">2 Runden • 45s Pro Zug</span>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-sm font-bold text-purple-300 uppercase tracking-wider mb-4 flex items-center justify-between">
-                        <span>Lobby Spieler (<span id="player-count">0</span>)</span>
-                        <span class="text-xs font-normal text-purple-400">Warte auf weitere Mitspieler...</span>
-                    </h3>
-
-                    <div id="player-list-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        <!-- Player cards added dynamically -->
-                    </div>
-                </div>
-
-                <div class="pt-4 flex flex-col sm:flex-row gap-3">
-                    <button id="btn-start-game" class="hidden flex-1 py-4 rounded-2xl font-display text-xl bg-gradient-to-r from-cake-pink to-cake-purple text-white hover:opacity-90 transition-all shadow-lg shadow-cake-pink/30 animate-pulse-glow">
-                        <i class="fa-solid fa-play mr-2"></i> Spiel Starten!
-                    </button>
-                    <button id="btn-leave-room" class="py-3 px-6 rounded-2xl font-bold text-sm bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 transition-colors">
-                        Verlassen
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= MAIN GAME PLAY SECTION ================= -->
-        <section id="view-gameplay" class="w-full max-w-5xl flex flex-col lg:flex-row gap-6 hidden">
+        <!-- LOBBY / SETUP -->
+        <section id="view-setup" class="w-full max-w-md bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-5">
+            <h2 class="text-2xl font-bold text-center">Profil & Raum</h2>
             
-            <!-- Left Side: Interactive Cake Display -->
-            <div class="lg:w-2/3 flex flex-col gap-4">
-                <div id="cake-stage-container" class="relative glass-panel rounded-3xl p-6 min-h-[420px] flex flex-col items-center justify-end overflow-hidden shadow-2xl border border-cake-pink/30">
-                    
-                    <!-- Floating Reactions Overlay Canvas -->
-                    <div id="reaction-overlay" class="absolute inset-0 pointer-events-none z-30"></div>
-
-                    <!-- Turn Indicator Bar -->
-                    <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-20 glass-card px-4 py-2 rounded-2xl border border-white/10">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-bold text-purple-300 uppercase">Am Zug:</span>
-                            <span id="current-turn-name" class="font-bold text-cake-pink flex items-center gap-1.5">
-                                <span id="current-turn-avatar">🎂</span> Player
-                            </span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <i class="fa-solid fa-clock text-cake-pink"></i>
-                            <span id="turn-timer-display" class="font-mono font-bold text-xl text-yellow-400">45</span>s
-                        </div>
-                    </div>
-
-                    <!-- Visual Multi-Tiered Cake Canvas / SVG Container -->
-                    <div id="cake-visual-root" class="relative w-full max-w-md h-[320px] flex flex-col items-center justify-end mb-2 transition-transform duration-500">
-                        <!-- Tier 3 (Top) -->
-                        <div id="cake-tier-3" class="relative w-48 h-20 bg-gradient-to-r from-pink-400 via-pink-300 to-pink-400 rounded-t-3xl border-b-4 border-pink-500 shadow-lg flex items-center justify-center z-10">
-                            <div class="absolute -top-3 left-0 right-0 flex justify-around px-2 text-xs">
-                                🍓 🍓 🍓 🍓
-                            </div>
-                            <div id="decorations-tier-3" class="absolute inset-0 flex items-center justify-center gap-1 p-1"></div>
-                        </div>
-
-                        <!-- Tier 2 (Middle) -->
-                        <div id="cake-tier-2" class="relative w-72 h-24 bg-gradient-to-r from-purple-400 via-pink-300 to-purple-400 rounded-t-3xl border-b-4 border-purple-500 shadow-md flex items-center justify-center z-0 -mt-2">
-                            <div class="absolute -top-3 left-0 right-0 flex justify-around px-4 text-xs">
-                                🕯️ 🕯️ 🕯️ 🕯️ 🕯️
-                            </div>
-                            <div id="decorations-tier-2" class="absolute inset-0 flex items-center justify-center gap-2 p-1"></div>
-                        </div>
-
-                        <!-- Tier 1 (Base Bottom) -->
-                        <div id="cake-tier-1" class="relative w-96 h-28 bg-gradient-to-r from-purple-600 via-cake-pink to-purple-600 rounded-t-3xl border-b-4 border-purple-800 shadow-2xl flex items-center justify-center -mt-2">
-                            <div class="absolute -top-3 left-0 right-0 flex justify-around px-6 text-xs">
-                                🍒 🍒 🍒 🍒 🍒 🍒
-                            </div>
-                            <div id="decorations-tier-1" class="absolute inset-0 flex items-center justify-center gap-2 p-1"></div>
-                        </div>
-
-                        <!-- Cake Stand Plate -->
-                        <div class="w-[105%] h-5 bg-gradient-to-r from-gray-300 via-white to-gray-400 rounded-full shadow-2xl border-b-2 border-gray-500"></div>
-                    </div>
-
-                    <!-- Live Quick Reactions Floating Bar -->
-                    <div class="flex items-center gap-2 sm:gap-4 mt-2 z-20">
-                        <button onclick="app.sendReaction('🔥')" class="reaction-btn px-3 py-1.5 rounded-2xl glass-card hover:bg-white/20 transition-all text-lg flex items-center gap-1 active:scale-95">
-                            🔥 <span class="text-xs font-bold text-purple-200 hidden sm:inline">Hear you out</span>
-                        </button>
-                        <button onclick="app.sendReaction('😳')" class="reaction-btn px-3 py-1.5 rounded-2xl glass-card hover:bg-white/20 transition-all text-lg flex items-center gap-1 active:scale-95">
-                            😳 <span class="text-xs font-bold text-purple-200 hidden sm:inline">Hold up</span>
-                        </button>
-                        <button onclick="app.sendReaction('💀')" class="reaction-btn px-3 py-1.5 rounded-2xl glass-card hover:bg-white/20 transition-all text-lg flex items-center gap-1 active:scale-95">
-                            💀 <span class="text-xs font-bold text-purple-200 hidden sm:inline">Nah</span>
-                        </button>
-                        <button onclick="app.sendReaction('🎂')" class="reaction-btn px-3 py-1.5 rounded-2xl glass-card hover:bg-white/20 transition-all text-lg flex items-center gap-1 active:scale-95">
-                            🎂 <span class="text-xs font-bold text-purple-200 hidden sm:inline">Approved</span>
-                        </button>
-                    </div>
-                </div>
+            <div class="space-y-2">
+                <label class="text-xs font-semibold text-slate-400 uppercase">Dein Name</label>
+                <input type="text" id="username-input" placeholder="z. B. Alex" maxlength="15" 
+                    class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-sky-500 transition-colors">
             </div>
 
-            <!-- Right Side: Player Action Panel / Upload Controls -->
-            <div class="lg:w-1/3 flex flex-col gap-4">
-                
-                <!-- Turn Input Box (Only active for current player) -->
-                <div id="active-turn-box" class="glass-panel p-5 rounded-3xl space-y-4 border border-cake-pink/40 relative">
-                    <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                        <h3 class="font-display text-lg text-white">Dein "Hear Me Out" Zug</h3>
-                        <span class="text-xs font-bold bg-cake-pink/30 text-cake-pink px-2.5 py-1 rounded-full border border-cake-pink/40">Du bist dran!</span>
-                    </div>
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button id="btn-tab-create" onclick="setMode('create')" class="py-2 rounded-xl text-sm font-bold bg-sky-500 text-white">Raum Erstellen</button>
+                <button id="btn-tab-join" onclick="setMode('join')" class="py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-400 hover:text-white">Beitreten</button>
+            </div>
 
-                    <!-- Image Drop / Paste Zone -->
-                    <div id="drop-zone" class="border-2 border-dashed border-cake-pink/50 hover:border-cake-pink rounded-2xl p-4 text-center cursor-pointer transition-colors relative bg-black/20 flex flex-col items-center justify-center min-h-[140px]">
-                        <input type="file" id="file-input" accept="image/*" class="hidden">
-                        <div id="preview-container" class="hidden w-full h-32 relative rounded-xl overflow-hidden mb-2">
-                            <img id="image-preview" src="" class="w-full h-full object-contain">
-                            <button id="btn-remove-img" class="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 text-white w-6 h-6 rounded-full text-xs flex items-center justify-center">
-                                <i class="fa-solid fa-times"></i>
-                            </button>
-                        </div>
-                        
-                        <div id="upload-placeholder" class="space-y-1">
-                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-cake-pink mb-1"></i>
-                            <p class="text-xs font-bold text-purple-200">Bild reinziehen, antippen oder...</p>
-                            <button id="btn-paste-clipboard" type="button" class="px-3 py-1 bg-cake-purple/30 hover:bg-cake-purple/50 border border-cake-purple/50 rounded-xl text-xs font-bold text-purple-200 transition-colors mt-1">
-                                <i class="fa-solid fa-paste"></i> Zwischenablage Einfügen (Ctrl+V)
-                            </button>
-                        </div>
-                    </div>
+            <div id="panel-create" class="space-y-4">
+                <button onclick="createRoom()" class="w-full py-3 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all">
+                    Raum Starten
+                </button>
+            </div>
 
-                    <!-- Name and Description Inputs -->
-                    <div class="space-y-3">
-                        <input type="text" id="pick-name-input" placeholder="Name (z.B. Shrek, Megamind...)" maxlength="25"
-                            class="w-full bg-black/40 border border-purple-500/30 rounded-xl px-3 py-2 text-sm text-white placeholder-purple-400/40 focus:outline-none focus:border-cake-pink">
-                        
-                        <textarea id="pick-caption-input" placeholder="Hear me out, weil..." rows="2" maxlength="80"
-                            class="w-full bg-black/40 border border-purple-500/30 rounded-xl px-3 py-2 text-sm text-white placeholder-purple-400/40 focus:outline-none focus:border-cake-pink resize-none"></textarea>
-                    </div>
-
-                    <button id="btn-submit-pick" class="w-full py-3 rounded-2xl font-display text-base bg-gradient-to-r from-cake-pink to-cake-purple text-white hover:opacity-90 transition-transform active:scale-95 shadow-lg shadow-cake-pink/20">
-                        Auf den Kuchen Platzieren! 🎂
-                    </button>
-                </div>
-
-                <!-- Waiting for Next Player Box -->
-                <div id="spectator-turn-box" class="glass-panel p-6 rounded-3xl text-center space-y-4 hidden flex-1 flex flex-col justify-center items-center">
-                    <div class="w-16 h-16 rounded-full bg-cake-purple/20 border border-cake-purple/40 flex items-center justify-center text-3xl animate-pulse">
-                        ⏳
-                    </div>
-                    <div>
-                        <h3 class="font-display text-lg text-white">Warte auf den aktuellen Zug</h3>
-                        <p class="text-xs text-purple-300 mt-1"><span id="spectator-player-name" class="font-bold text-cake-pink">---</span> wählt gerade seinen/ihren Crush aus...</p>
-                    </div>
-                    <p class="text-xs text-purple-400 italic">Nutze unten die Emoji-Buttons, um live zu reagieren!</p>
-                </div>
-
-                <!-- Recent Submissions List / Log -->
-                <div class="glass-card p-4 rounded-3xl space-y-3 flex-1 overflow-hidden flex flex-col">
-                    <h4 class="text-xs font-bold text-purple-300 uppercase tracking-wider">Kuchen Decke Log</h4>
-                    <div id="recent-picks-list" class="space-y-2 overflow-y-auto max-h-48 pr-1">
-                        <p class="text-xs text-purple-400 italic text-center py-4">Noch keine Charaktere platziert.</p>
-                    </div>
-                </div>
+            <div id="panel-join" class="space-y-4 hidden">
+                <input type="text" id="join-code" placeholder="6-Stelliger Code" maxlength="6" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-center font-mono uppercase text-lg text-white">
+                <button onclick="joinRoom()" class="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all">
+                    Beitreten
+                </button>
             </div>
         </section>
 
-        <!-- ================= END GAME SHOWCASE / GALLERY SECTION ================= -->
-        <section id="view-gameover" class="w-full max-w-3xl flex flex-col gap-6 hidden animate-pop-in">
-            <div class="text-center space-y-2">
-                <h2 class="text-4xl md:text-5xl font-display bg-gradient-to-r from-cake-pink via-yellow-300 to-cake-purple bg-clip-text text-transparent">
-                    Euer Fertiger "Hear Me Out" Kuchen! 🎉
-                </h2>
-                <p class="text-purple-200 text-sm">Schaut euch das Meisterwerk an, das ihr zusammen erschaffen habt!</p>
+        <!-- GAMEPLAY / BOARD VIEW -->
+        <section id="view-board" class="w-full max-w-5xl flex flex-col gap-4 hidden">
+            
+            <!-- Top Controls & Timer -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <span class="text-xs text-slate-400 font-semibold uppercase">Am Zug</span>
+                    <p id="current-player-display" class="text-lg font-bold text-sky-400">---</p>
+                </div>
+
+                <!-- Timer Bar Container -->
+                <div class="flex-1 max-w-xs space-y-1">
+                    <div class="flex justify-between text-xs text-slate-400 font-mono">
+                        <span>ZEIT</span>
+                        <span id="timer-text">45s</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div id="timer-bar" class="h-full bg-sky-500 transition-all duration-1000 w-full"></div>
+                    </div>
+                </div>
+
+                <!-- Live Reactions Bar (Triggert KEINEN Timer-Reset) -->
+                <div class="flex items-center gap-2">
+                    <button onclick="triggerEmoji('🔥')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xl active:scale-95 transition-transform">🔥</button>
+                    <button onclick="triggerEmoji('💀')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xl active:scale-95 transition-transform">💀</button>
+                    <button onclick="triggerEmoji('😳')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xl active:scale-95 transition-transform">😳</button>
+                    <button onclick="triggerEmoji('👑')" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-xl active:scale-95 transition-transform">👑</button>
+                </div>
             </div>
 
-            <div class="glass-panel p-6 md:p-8 rounded-3xl space-y-6 flex flex-col items-center">
+            <!-- Whiteboard Area -->
+            <div id="board-canvas" class="relative board-grid bg-slate-950 border border-slate-800 rounded-3xl min-h-[420px] p-6 flex flex-wrap gap-4 items-center justify-center overflow-hidden shadow-2xl">
+                <p id="board-empty-msg" class="text-slate-600 text-sm italic">Das Board ist noch leer. Füge das erste Bild hinzu!</p>
+            </div>
+
+            <!-- Upload Input Dock -->
+            <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row gap-3 items-center">
+                <input type="file" id="image-upload" accept="image/*" class="text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-500/10 file:text-sky-400 hover:file:bg-sky-500/20 cursor-pointer">
                 
-                <!-- Printable / Downloadable Cake Wrapper -->
-                <div id="final-cake-canvas-wrapper" class="w-full bg-gradient-to-b from-purple-950/80 to-black p-6 rounded-2xl border border-cake-pink/40 shadow-2xl flex flex-col items-center relative">
-                    <div class="absolute top-3 left-4 text-xs font-mono text-purple-400">HEAR ME OUT CAKE • <span id="final-room-code">------</span></div>
-                    
-                    <!-- Cloned / Final Rendered Cake Container -->
-                    <div id="final-cake-render" class="w-full max-w-md my-6 flex flex-col items-center justify-end min-h-[320px]">
-                        <!-- Populated dynamically at game over -->
-                    </div>
-
-                    <!-- Grid of picks & info -->
-                    <div id="final-picks-grid" class="w-full grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 border-t border-white/10 pt-4">
-                        <!-- Filled dynamically -->
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex flex-col sm:flex-row gap-3 w-full">
-                    <button id="btn-download-cake" class="flex-1 py-3.5 rounded-2xl font-display text-base bg-gradient-to-r from-cake-pink to-cake-purple text-white hover:opacity-90 transition-transform active:scale-95 shadow-xl shadow-cake-pink/20 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-download"></i> Kuchen Als Bild Speichern
-                    </button>
-                    <button id="btn-play-again" class="py-3.5 px-6 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/20 text-purple-200 transition-colors">
-                        Neues Spiel
-                    </button>
-                </div>
+                <!-- NAME IST JETZT OPTIONAL -->
+                <input type="text" id="pick-name" placeholder="Name/Titel (Optional)" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500">
+                
+                <button onclick="submitPick()" class="w-full md:w-auto px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-white font-bold rounded-xl shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Aufs Board!
+                </button>
             </div>
         </section>
 
     </main>
 
-    <!-- Footer -->
-    <footer class="relative z-10 w-full p-4 text-center text-xs text-purple-400/60 border-t border-white/5 glass-panel mt-6">
-        Hear Me Out Cake Game • Bereit für GitHub Pages • WebRTC PeerJS Multiplayer Engine
-    </footer>
-
-    <!-- Game Engine Script (PeerJS WebRTC + BroadcastChannel) -->
     <script>
-        // Sound Synthesis (Web Audio API)
-        class SoundEngine {
-            constructor() {
-                this.ctx = null;
-            }
-            init() {
-                if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let currentMode = 'create';
+        let timerSeconds = 45;
+        let timerInterval = null;
+        let activePickImage = null;
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('panel-create').classList.toggle('hidden', mode !== 'create');
+            document.getElementById('panel-join').classList.toggle('hidden', mode !== 'join');
+            document.getElementById('btn-tab-create').className = mode === 'create' ? 'py-2 rounded-xl text-sm font-bold bg-sky-500 text-white' : 'py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-400';
+            document.getElementById('btn-tab-join').className = mode === 'join' ? 'py-2 rounded-xl text-sm font-bold bg-sky-500 text-white' : 'py-2 rounded-xl text-sm font-bold bg-slate-800 text-slate-400';
+        }
+
+        function createRoom() {
+            const name = document.getElementById('username-input').value.trim() || 'Player';
+            document.getElementById('view-setup').classList.add('hidden');
+            document.getElementById('view-board').classList.remove('hidden');
+            document.getElementById('room-badge').classList.remove('hidden');
+            document.getElementById('badge-code').innerText = Math.random().toString(36).substring(2, 8).toUpperCase();
+            document.getElementById('current-player-display').innerText = name;
+            startTimer();
+        }
+
+        function joinRoom() {
+            createRoom();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerSeconds = 45;
+            updateTimerUI();
+            timerInterval = setInterval(() => {
+                timerSeconds--;
+                updateTimerUI();
+                if (timerSeconds <= 0) {
+                    clearInterval(timerInterval);
                 }
-            }
-            playPop() {
-                try {
-                    this.init();
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.1);
-                    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-                    gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + 0.1);
-                } catch(e) {}
-            }
-            playFanfare() {
-                try {
-                    this.init();
-                    [261.63, 329.63, 392.00, 523.25].forEach((freq, idx) => {
-                        const osc = this.ctx.createOscillator();
-                        const gain = this.ctx.createGain();
-                        osc.frequency.value = freq;
-                        gain.gain.setValueAtTime(0.1, this.ctx.currentTime + idx * 0.1);
-                        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + idx * 0.1 + 0.3);
-                        osc.connect(gain);
-                        gain.connect(this.ctx.destination);
-                        osc.start(this.ctx.currentTime + idx * 0.1);
-                        osc.stop(this.ctx.currentTime + idx * 0.1 + 0.3);
-                    });
-                } catch(e) {}
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            document.getElementById('timer-text').innerText = timerSeconds + 's';
+            const pct = (timerSeconds / 45) * 100;
+            const bar = document.getElementById('timer-bar');
+            bar.style.width = pct + '%';
+            if (timerSeconds <= 10) {
+                bar.className = 'h-full bg-red-500 animate-pulse transition-all duration-1000';
+            } else {
+                bar.className = 'h-full bg-sky-500 transition-all duration-1000';
             }
         }
 
-        const sounds = new SoundEngine();
-
-        // Presets for Avatars
-        const AVATAR_PRESETS = ['🎂', '🧁', '🦄', '👽', '👑', '😈', '🤡', '🦊', '🐸', '🐱', '🤖', '👾'];
-
-        class GameApp {
-            constructor() {
-                this.userId = 'user_' + Math.random().toString(36).substring(2, 9);
-                this.peer = null;
-                this.connections = []; // Host: list of guest conns
-                this.hostConn = null;  // Guest: connection to host
-                this.broadcastChannel = null;
-                
-                this.currentRoomId = null;
-                this.isHost = false;
-
-                // Local Player Data
-                this.playerData = {
-                    name: localStorage.getItem('hmoc_username') || '',
-                    avatar: localStorage.getItem('hmoc_avatar') || '🎂'
-                };
-
-                // Current Room State Cache
-                this.roomState = null;
-                this.timerInterval = null;
-                this.selectedImageBase64 = null;
-                this.lastProcessedReaction = 0;
-
-                this.initApp();
-            }
-
-            initApp() {
-                this.setupDOM();
-                this.setupAvatarPicker();
-                this.bindEvents();
-
-                // Auto-join room from URL query if present
-                const urlParams = new URLSearchParams(window.location.search);
-                const roomParam = urlParams.get('room');
-                if (roomParam) {
-                    document.getElementById('join-code-input').value = roomParam.toUpperCase();
-                }
-            }
-
-            setupDOM() {
-                const nameInput = document.getElementById('username-input');
-                if (nameInput) nameInput.value = this.playerData.name;
-                document.getElementById('avatar-picker-btn').innerText = this.playerData.avatar;
-                this.updateHeaderProfile();
-            }
-
-            setupAvatarPicker() {
-                const container = document.getElementById('avatar-presets');
-                container.innerHTML = '';
-                AVATAR_PRESETS.forEach(emoji => {
-                    const btn = document.createElement('button');
-                    btn.className = 'text-2xl p-2 hover:bg-white/20 rounded-xl transition-transform hover:scale-110';
-                    btn.innerText = emoji;
-                    btn.onclick = () => {
-                        this.playerData.avatar = emoji;
-                        localStorage.setItem('hmoc_avatar', emoji);
-                        document.getElementById('avatar-picker-btn').innerText = emoji;
-                        container.classList.add('hidden');
-                        this.updateHeaderProfile();
-                    };
-                    container.appendChild(btn);
-                });
-
-                document.getElementById('avatar-picker-btn').onclick = () => {
-                    container.classList.toggle('hidden');
-                };
-            }
-
-            updateHeaderProfile() {
-                if (this.playerData.name) {
-                    document.getElementById('header-user-info').classList.remove('hidden');
-                    document.getElementById('header-user-info').classList.add('flex');
-                    document.getElementById('header-avatar').innerText = this.playerData.avatar;
-                    document.getElementById('header-username').innerText = this.playerData.name;
-                }
-            }
-
-            bindEvents() {
-                // Tabs
-                const tabCreateBtn = document.getElementById('tab-create-btn');
-                const tabJoinBtn = document.getElementById('tab-join-btn');
-                const tabCreateContent = document.getElementById('tab-create-content');
-                const tabJoinContent = document.getElementById('tab-join-content');
-
-                tabCreateBtn.onclick = () => {
-                    tabCreateBtn.className = "py-2.5 rounded-xl font-bold text-sm bg-cake-pink text-white shadow-lg shadow-cake-pink/30 transition-all";
-                    tabJoinBtn.className = "py-2.5 rounded-xl font-bold text-sm bg-white/5 hover:bg-white/10 text-purple-200 transition-all";
-                    tabCreateContent.classList.remove('hidden');
-                    tabJoinContent.classList.add('hidden');
-                };
-
-                tabJoinBtn.onclick = () => {
-                    tabJoinBtn.className = "py-2.5 rounded-xl font-bold text-sm bg-cake-purple text-white shadow-lg shadow-cake-purple/30 transition-all";
-                    tabCreateBtn.className = "py-2.5 rounded-xl font-bold text-sm bg-white/5 hover:bg-white/10 text-purple-200 transition-all";
-                    tabJoinContent.classList.remove('hidden');
-                    tabCreateContent.classList.add('hidden');
-                };
-
-                // Actions
-                document.getElementById('btn-create-room').onclick = () => this.createRoom();
-                document.getElementById('btn-join-room').onclick = () => this.joinRoom();
-                document.getElementById('btn-start-game').onclick = () => this.startGame();
-                document.getElementById('btn-leave-room').onclick = () => this.leaveRoom();
-                document.getElementById('btn-copy-code').onclick = () => this.copyRoomCode();
-
-                // Image Upload Controls
-                const dropZone = document.getElementById('drop-zone');
-                const fileInput = document.getElementById('file-input');
-
-                dropZone.onclick = (e) => {
-                    if (e.target.id !== 'btn-paste-clipboard' && e.target.id !== 'btn-remove-img') {
-                        fileInput.click();
-                    }
-                };
-
-                fileInput.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) this.handleImageFile(file);
-                };
-
-                // Drag & Drop
-                dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('border-cake-pink'); };
-                dropZone.ondragleave = () => { dropZone.classList.remove('border-cake-pink'); };
-                dropZone.ondrop = (e) => {
-                    e.preventDefault();
-                    dropZone.classList.remove('border-cake-pink');
-                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                        this.handleImageFile(e.dataTransfer.files[0]);
-                    }
-                };
-
-                // Clipboard Paste Button & Keyboard Paste (Ctrl+V)
-                document.getElementById('btn-paste-clipboard').onclick = async (e) => {
-                    e.stopPropagation();
-                    try {
-                        const items = await navigator.clipboard.read();
-                        for (const item of items) {
-                            for (const type of item.types) {
-                                if (type.startsWith('image/')) {
-                                    const blob = await item.getType(type);
-                                    this.handleImageFile(blob);
-                                    return;
-                                }
-                            }
-                        }
-                        this.toast('Kein Bild in der Zwischenablage gefunden!', 'warning');
-                    } catch (err) {
-                        this.toast('Bitte nutze Strg+V zum Einfügen!', 'info');
-                    }
-                };
-
-                window.addEventListener('paste', (e) => {
-                    const items = e.clipboardData?.items;
-                    if (items) {
-                        for (let item of items) {
-                            if (item.type.indexOf('image') !== -1) {
-                                const blob = item.getAsFile();
-                                this.handleImageFile(blob);
-                                break;
-                            }
-                        }
-                    }
-                });
-
-                document.getElementById('btn-remove-img').onclick = (e) => {
-                    e.stopPropagation();
-                    this.clearImagePreview();
-                };
-
-                document.getElementById('btn-submit-pick').onclick = () => this.submitPick();
-                document.getElementById('btn-download-cake').onclick = () => this.downloadCakeImage();
-                document.getElementById('btn-play-again').onclick = () => this.showHome();
-            }
-
-            handleImageFile(file) {
-                if (!file.type.startsWith('image/')) {
-                    this.toast('Bitte wähle eine Bilddatei aus.', 'error');
-                    return;
-                }
-                
+        // Image Selection
+        document.getElementById('image-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const maxDim = 320;
-                        let w = img.width;
-                        let h = img.height;
-                        if (w > maxDim || h > maxDim) {
-                            if (w > h) {
-                                h = Math.round((h * maxDim) / w);
-                                w = maxDim;
-                            } else {
-                                w = Math.round((w * maxDim) / h);
-                                h = maxDim;
-                            }
-                        }
-                        canvas.width = w;
-                        canvas.height = h;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, w, h);
-                        
-                        this.selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-                        
-                        document.getElementById('image-preview').src = this.selectedImageBase64;
-                        document.getElementById('preview-container').classList.remove('hidden');
-                        document.getElementById('upload-placeholder').classList.add('hidden');
-                        sounds.playPop();
-                    };
-                    img.src = e.target.result;
-                };
+                reader.onload = function(evt) {
+                    activePickImage = evt.target.result;
+                }
                 reader.readAsDataURL(file);
             }
+        });
 
-            clearImagePreview() {
-                this.selectedImageBase64 = null;
-                document.getElementById('image-preview').src = '';
-                document.getElementById('preview-container').classList.add('hidden');
-                document.getElementById('upload-placeholder').classList.remove('hidden');
-                document.getElementById('file-input').value = '';
+        // Submit Pick onto Board
+        function submitPick() {
+            if (!activePickImage) {
+                alert("Bitte wähle zuerst ein Bild aus!");
+                return;
             }
 
-            validateProfile() {
-                const username = document.getElementById('username-input').value.trim();
-                if (!username) {
-                    this.toast('Bitte gib einen Spielernamen ein!', 'error');
-                    return false;
-                }
-                this.playerData.name = username;
-                localStorage.setItem('hmoc_username', username);
-                this.updateHeaderProfile();
-                return true;
-            }
-
-            getPeerId(code) {
-                return 'hmoc-cake-' + code.toLowerCase();
-            }
-
-            async createRoom() {
-                if (!this.validateProfile()) return;
-
-                const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-                const rounds = parseInt(document.getElementById('setting-rounds').value);
-                const timerSec = parseInt(document.getElementById('setting-timer').value);
-
-                this.isHost = true;
-                this.currentRoomId = code;
-
-                this.roomState = {
-                    code: code,
-                    hostId: this.userId,
-                    settings: { rounds, timerSec },
-                    status: 'WAITING',
-                    players: [{
-                        id: this.userId,
-                        name: this.playerData.name,
-                        avatar: this.playerData.avatar,
-                        isHost: true
-                    }],
-                    turnIndex: 0,
-                    currentRound: 1,
-                    picks: [],
-                    lastReaction: null,
-                    updatedAt: Date.now()
-                };
-
-                this.setupBroadcastChannel(code);
-
-                // Initialize Host Peer
-                const peerId = this.getPeerId(code);
-                this.toast('Erstelle Raum...', 'info');
-
-                try {
-                    this.peer = new Peer(peerId, { debug: 1 });
-
-                    this.peer.on('open', () => {
-                        this.toast(`Raum ${code} erfolgreich erstellt! 🎉`, 'success');
-                        document.getElementById('room-code-badge').innerText = code;
-                        this.updateUI();
-                    });
-
-                    this.peer.on('connection', (conn) => {
-                        this.connections.push(conn);
-                        
-                        conn.on('data', (data) => {
-                            this.handleHostReceivedData(conn, data);
-                        });
-
-                        conn.on('open', () => {
-                            // Sync state immediately on connection
-                            conn.send({ type: 'STATE_UPDATE', state: this.roomState });
-                        });
-                    });
-
-                    this.peer.on('error', (err) => {
-                        console.warn("PeerJS Host Error:", err);
-                        // Fallback to local execution if peer id taken or network restricted
-                        this.updateUI();
-                    });
-                } catch(e) {
-                    console.warn("PeerJS initialization fallback:", e);
-                    this.updateUI();
-                }
-            }
-
-            async joinRoom() {
-                if (!this.validateProfile()) return;
-
-                const code = document.getElementById('join-code-input').value.trim().toUpperCase();
-                if (code.length !== 6) {
-                    this.toast('Der Raumcode muss 6-stellig sein!', 'error');
-                    return;
-                }
-
-                this.isHost = false;
-                this.currentRoomId = code;
-                this.setupBroadcastChannel(code);
-
-                this.toast(`Verbinde mit Raum ${code}...`, 'info');
-
-                try {
-                    this.peer = new Peer({ debug: 1 });
-
-                    this.peer.on('open', () => {
-                        const targetPeerId = this.getPeerId(code);
-                        this.hostConn = this.peer.connect(targetPeerId, { reliable: true });
-
-                        this.hostConn.on('open', () => {
-                            this.toast('Mit Raum verbunden! 🚀', 'success');
-                            document.getElementById('room-code-badge').innerText = code;
-                            
-                            // Send Join action
-                            this.hostConn.send({
-                                type: 'JOIN',
-                                player: {
-                                    id: this.userId,
-                                    name: this.playerData.name,
-                                    avatar: this.playerData.avatar,
-                                    isHost: false
-                                }
-                            });
-                        });
-
-                        this.hostConn.on('data', (data) => {
-                            this.handleClientReceivedData(data);
-                        });
-
-                        this.hostConn.on('error', (err) => {
-                            this.toast('Verbindungsfehler zum Host.', 'error');
-                        });
-                    });
-
-                    this.peer.on('error', (err) => {
-                        this.toast('Raum konnte nicht gefunden werden. Prüfe den Code.', 'error');
-                    });
-                } catch(e) {
-                    this.toast('Verbindungsfehler.', 'error');
-                }
-            }
-
-            setupBroadcastChannel(code) {
-                if (this.broadcastChannel) this.broadcastChannel.close();
-                this.broadcastChannel = new BroadcastChannel('hmoc_channel_' + code);
-                this.broadcastChannel.onmessage = (event) => {
-                    const data = event.data;
-                    if (this.isHost) {
-                        this.handleHostReceivedData(null, data);
-                    } else {
-                        this.handleClientReceivedData(data);
-                    }
-                };
-            }
-
-            handleHostReceivedData(conn, data) {
-                if (!this.roomState) return;
-
-                if (data.type === 'JOIN') {
-                    const existing = this.roomState.players.find(p => p.id === data.player.id);
-                    if (!existing) {
-                        this.roomState.players.push(data.player);
-                        this.broadcastState();
-                    }
-                } else if (data.type === 'SUBMIT_PICK') {
-                    const picks = [...(this.roomState.picks || []), data.pick];
-                    this.nextTurn(picks);
-                } else if (data.type === 'REACTION') {
-                    this.roomState.lastReaction = data.reaction;
-                    this.broadcastState();
-                }
-            }
-
-            handleClientReceivedData(data) {
-                if (data.type === 'STATE_UPDATE') {
-                    this.roomState = data.state;
-                    this.updateUI();
-                }
-            }
-
-            broadcastState() {
-                if (!this.isHost || !this.roomState) return;
-                this.roomState.updatedAt = Date.now();
-                
-                // Update local Host UI
-                this.updateUI();
-
-                // Send to all connected guests via WebRTC
-                this.connections.forEach(conn => {
-                    if (conn.open) {
-                        conn.send({ type: 'STATE_UPDATE', state: this.roomState });
-                    }
-                });
-
-                // Send via BroadcastChannel for same-browser tabs
-                if (this.broadcastChannel) {
-                    this.broadcastChannel.postMessage({ type: 'STATE_UPDATE', state: this.roomState });
-                }
-            }
-
-            sendToHost(actionData) {
-                if (this.isHost) {
-                    this.handleHostReceivedData(null, actionData);
-                } else if (this.hostConn && this.hostConn.open) {
-                    this.hostConn.send(actionData);
-                } else if (this.broadcastChannel) {
-                    this.broadcastChannel.postMessage(actionData);
-                }
-            }
-
-            updateUI() {
-                if (!this.roomState) return;
-
-                const { status, players, settings, code, turnIndex, picks, lastReaction } = this.roomState;
-
-                // Floating reactions trigger
-                if (lastReaction && lastReaction.timestamp > this.lastProcessedReaction) {
-                    this.lastProcessedReaction = lastReaction.timestamp;
-                    this.renderFloatingReaction(lastReaction.emoji);
-                }
-
-                if (status === 'WAITING') {
-                    this.showView('view-waiting');
-                    document.getElementById('display-room-code').innerText = code;
-                    document.getElementById('display-room-settings').innerText = `${settings.rounds} Runden • ${settings.timerSec}s Pro Zug`;
-                    document.getElementById('player-count').innerText = players.length;
-
-                    const container = document.getElementById('player-list-container');
-                    container.innerHTML = players.map(p => `
-                        <div class="glass-card p-3 rounded-2xl flex items-center gap-3 border border-white/10 animate-pop-in">
-                            <span class="text-2xl">${p.avatar}</span>
-                            <div class="overflow-hidden">
-                                <p class="font-bold text-sm text-purple-100 truncate">${p.name}</p>
-                                <span class="text-[10px] uppercase font-bold text-cake-pink">${p.isHost ? '👑 Host' : 'Bereit'}</span>
-                            </div>
-                        </div>
-                    `).join('');
-
-                    const startBtn = document.getElementById('btn-start-game');
-                    if (this.isHost) {
-                        startBtn.classList.remove('hidden');
-                    } else {
-                        startBtn.classList.add('hidden');
-                    }
-
-                } else if (status === 'PLAYING') {
-                    this.showView('view-gameplay');
-                    
-                    const activePlayer = players[turnIndex % players.length];
-                    const isMyTurn = activePlayer && activePlayer.id === this.userId;
-
-                    document.getElementById('current-turn-name').innerHTML = `<span class="text-xl">${activePlayer ? activePlayer.avatar : '🎂'}</span> ${activePlayer ? activePlayer.name : 'Spieler'}`;
-                    
-                    if (isMyTurn) {
-                        document.getElementById('active-turn-box').classList.remove('hidden');
-                        document.getElementById('spectator-turn-box').classList.add('hidden');
-                    } else {
-                        document.getElementById('active-turn-box').classList.add('hidden');
-                        document.getElementById('spectator-turn-box').classList.remove('hidden');
-                        document.getElementById('spectator-player-name').innerText = activePlayer ? activePlayer.name : '---';
-                    }
-
-                    this.renderCakeDecorations(picks || []);
-                    this.renderRecentPicks(picks || []);
-                    this.syncTimer();
-
-                } else if (status === 'FINISHED') {
-                    this.showView('view-gameover');
-                    sounds.playFanfare();
-                    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-                    
-                    document.getElementById('final-room-code').innerText = code;
-                    this.renderFinalCakeShowcase();
-                }
-            }
-
-            renderCakeDecorations(picks) {
-                const t1 = document.getElementById('decorations-tier-1');
-                const t2 = document.getElementById('decorations-tier-2');
-                const t3 = document.getElementById('decorations-tier-3');
-
-                t1.innerHTML = '';
-                t2.innerHTML = '';
-                t3.innerHTML = '';
-
-                picks.forEach((pick, index) => {
-                    const el = document.createElement('div');
-                    el.className = 'relative group animate-pop-in cursor-pointer hover:scale-125 transition-transform duration-300';
-                    el.innerHTML = `
-                        <div class="w-12 h-12 rounded-full border-2 border-cake-pink overflow-hidden shadow-lg bg-black">
-                            <img src="${pick.image}" class="w-full h-full object-cover">
-                        </div>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-black/90 text-white text-[10px] py-1 px-2 rounded-lg whitespace-nowrap z-50 pointer-events-none border border-cake-pink">
-                            <p class="font-bold text-cake-pink">${pick.name}</p>
-                            <p class="text-purple-300">Von ${pick.playerName}</p>
-                        </div>
-                    `;
-
-                    if (index % 3 === 0) {
-                        t1.appendChild(el);
-                    } else if (index % 3 === 1) {
-                        t2.appendChild(el);
-                    } else {
-                        t3.appendChild(el);
-                    }
-                });
-            }
-
-            renderRecentPicks(picks) {
-                const container = document.getElementById('recent-picks-list');
-                if (!picks || picks.length === 0) {
-                    container.innerHTML = '<p class="text-xs text-purple-400 italic text-center py-4">Noch keine Charaktere platziert.</p>';
-                    return;
-                }
-
-                container.innerHTML = picks.slice().reverse().map(pick => `
-                    <div class="flex items-center gap-2.5 p-2 bg-black/30 rounded-xl border border-white/5 animate-pop-in">
-                        <img src="${pick.image}" class="w-9 h-9 rounded-lg object-cover border border-cake-pink/50">
-                        <div class="overflow-hidden flex-1">
-                            <p class="text-xs font-bold text-purple-100 truncate">${pick.name}</p>
-                            <p class="text-[10px] text-purple-300 truncate">${pick.caption ? '"' + pick.caption + '"' : 'Keine Beschreibung'}</p>
-                        </div>
-                        <span class="text-[10px] font-bold text-cake-pink bg-cake-pink/20 px-2 py-0.5 rounded-full">${pick.playerAvatar}</span>
-                    </div>
-                `).join('');
-            }
-
-            syncTimer() {
-                if (this.timerInterval) clearInterval(this.timerInterval);
-
-                const timerDisplay = document.getElementById('turn-timer-display');
-                let timeLeft = this.roomState.settings.timerSec;
-                timerDisplay.innerText = timeLeft;
-
-                this.timerInterval = setInterval(() => {
-                    timeLeft--;
-                    timerDisplay.innerText = timeLeft;
-
-                    if (timeLeft <= 0) {
-                        clearInterval(this.timerInterval);
-                        if (this.isHost) {
-                            this.nextTurn();
-                        }
-                    }
-                }, 1000);
-            }
-
-            startGame() {
-                if (!this.isHost || !this.roomState) return;
-                this.roomState.status = 'PLAYING';
-                this.roomState.turnIndex = 0;
-                this.roomState.currentRound = 1;
-                this.roomState.picks = [];
-                this.broadcastState();
-            }
-
-            submitPick() {
-                const nameInput = document.getElementById('pick-name-input').value.trim();
-                const captionInput = document.getElementById('pick-caption-input').value.trim();
-
-                if (!this.selectedImageBase64) {
-                    this.toast('Bitte lade ein Bild für deinen "Hear Me Out" Pick hoch!', 'error');
-                    return;
-                }
-
-                if (!nameInput) {
-                    this.toast('Bitte gib dem Charakter einen Namen!', 'error');
-                    return;
-                }
-
-                const newPick = {
-                    playerId: this.userId,
-                    playerName: this.playerData.name,
-                    playerAvatar: this.playerData.avatar,
-                    name: nameInput,
-                    caption: captionInput,
-                    image: this.selectedImageBase64,
-                    timestamp: Date.now()
-                };
-
-                document.getElementById('pick-name-input').value = '';
-                document.getElementById('pick-caption-input').value = '';
-                this.clearImagePreview();
-
-                sounds.playPop();
-
-                this.sendToHost({
-                    type: 'SUBMIT_PICK',
-                    pick: newPick
-                });
-            }
-
-            nextTurn(updatedPicks) {
-                if (!this.isHost) return;
-
-                const picks = updatedPicks || this.roomState.picks || [];
-                let { turnIndex, currentRound, players, settings } = this.roomState;
-
-                turnIndex++;
-                
-                if (turnIndex >= players.length) {
-                    turnIndex = 0;
-                    currentRound++;
-                }
-
-                if (currentRound > settings.rounds) {
-                    this.roomState.status = 'FINISHED';
-                }
-
-                this.roomState.picks = picks;
-                this.roomState.turnIndex = turnIndex;
-                this.roomState.currentRound = currentRound;
-                
-                this.broadcastState();
-            }
-
-            sendReaction(emoji) {
-                const reaction = {
-                    emoji: emoji,
-                    sender: this.playerData.name,
-                    timestamp: Date.now()
-                };
-
-                sounds.playPop();
-
-                this.sendToHost({
-                    type: 'REACTION',
-                    reaction: reaction
-                });
-            }
-
-            renderFloatingReaction(emoji) {
-                const overlay = document.getElementById('reaction-overlay');
-                if (!overlay) return;
-
-                const el = document.createElement('div');
-                el.className = 'floating-reaction text-4xl';
-                el.innerText = emoji;
-                
-                const randomX = Math.random() * 80 + 10;
-                el.style.left = `${randomX}%`;
-                el.style.bottom = '20px';
-
-                overlay.appendChild(el);
-                setTimeout(() => el.remove(), 1800);
-            }
-
-            renderFinalCakeShowcase() {
-                const finalRender = document.getElementById('final-cake-render');
-                const finalPicksGrid = document.getElementById('final-picks-grid');
-
-                const cakeClone = document.getElementById('cake-visual-root').cloneNode(true);
-                finalRender.innerHTML = '';
-                finalRender.appendChild(cakeClone);
-
-                const picks = this.roomState.picks || [];
-                if (picks.length === 0) {
-                    finalPicksGrid.innerHTML = '<p class="col-span-3 text-center text-xs text-purple-400">Keine Charaktere auf dem Kuchen.</p>';
-                    return;
-                }
-
-                finalPicksGrid.innerHTML = picks.map(p => `
-                    <div class="glass-card p-3 rounded-2xl flex flex-col items-center text-center gap-2 border border-cake-pink/30">
-                        <img src="${p.image}" class="w-16 h-16 rounded-xl object-cover border-2 border-cake-pink shadow-md">
-                        <div>
-                            <p class="font-bold text-xs text-purple-100">${p.name}</p>
-                            ${p.caption ? `<p class="text-[10px] text-purple-300 italic">"${p.caption}"</p>` : ''}
-                            <p class="text-[9px] text-cake-pink font-bold mt-1">Von: ${p.playerAvatar} ${p.playerName}</p>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            downloadCakeImage() {
-                const target = document.getElementById('final-cake-canvas-wrapper');
-                this.toast('Erstelle Kuchen-Bild...', 'info');
-
-                html2canvas(target, {
-                    backgroundColor: '#0b0612',
-                    scale: 2,
-                    useCORS: true
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `HearMeOut_Cake_${this.currentRoomId}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    this.toast('Kuchen erfolgreich heruntergeladen! 🎉', 'success');
-                }).catch(err => {
-                    console.error("Screenshot error:", err);
-                    this.toast('Fehler beim Erstellen des Bildes.', 'error');
-                });
-            }
-
-            showView(viewId) {
-                ['view-lobby', 'view-waiting', 'view-gameplay', 'view-gameover'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (id === viewId) {
-                        el.classList.remove('hidden');
-                    } else {
-                        el.classList.add('hidden');
-                    }
-                });
-            }
-
-            showHome() {
-                if (this.peer) this.peer.destroy();
-                if (this.broadcastChannel) this.broadcastChannel.close();
-                this.currentRoomId = null;
-                document.getElementById('room-code-badge').innerText = '----';
-                this.showView('view-lobby');
-            }
-
-            leaveRoom() {
-                this.showHome();
-            }
-
-            copyRoomCode() {
-                if (!this.currentRoomId) return;
-                const shareUrl = `${window.location.origin}${window.location.pathname}?room=${this.currentRoomId}`;
-                
-                const tempInput = document.createElement('input');
-                tempInput.value = shareUrl;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                this.toast('Link & Raumcode kopiert! 📋', 'success');
-            }
-
-            toast(msg, type = 'info') {
-                const container = document.getElementById('toast-container');
-                const toast = document.createElement('div');
-                
-                const bgColors = {
-                    success: 'bg-emerald-600',
-                    error: 'bg-red-600',
-                    warning: 'bg-amber-600',
-                    info: 'bg-cake-purple'
-                };
-
-                toast.className = `${bgColors[type] || bgColors.info} text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold flex items-center gap-2 animate-pop-in pointer-events-auto`;
-                toast.innerHTML = `<span>${msg}</span>`;
-
-                container.appendChild(toast);
-                setTimeout(() => {
-                    toast.style.opacity = '0';
-                    toast.style.transition = 'opacity 0.3s';
-                    setTimeout(() => toast.remove(), 300);
-                }, 3000);
-            }
+            const nameInput = document.getElementById('pick-name').value.trim();
+            const displayName = nameInput !== "" ? nameInput : null; // Name ist optional!
+            
+            const emptyMsg = document.getElementById('board-empty-msg');
+            if (emptyMsg) emptyMsg.remove();
+
+            const canvas = document.getElementById('board-canvas');
+            
+            // Create Card Container mit der geilen Slam-In Animation
+            const card = document.createElement('div');
+            card.className = "relative bg-slate-900 border border-slate-700/60 p-3 rounded-2xl shadow-2xl flex flex-col items-center gap-2 max-w-[200px] animate-slam hover:scale-105 transition-transform duration-200 cursor-pointer group";
+
+            let nameHTML = displayName ? `<span class="text-xs font-bold text-slate-200 truncate max-w-[170px]">${displayName}</span>` : '';
+
+            card.innerHTML = `
+                <div class="w-40 h-40 rounded-xl overflow-hidden bg-black/40 border border-slate-800 flex items-center justify-center">
+                    <img src="${activePickImage}" class="w-full h-full object-cover">
+                </div>
+                ${nameHTML}
+            `;
+
+            canvas.appendChild(card);
+
+            // Confetti Burst bei neuem Card-Drop
+            confetti({
+                particleCount: 25,
+                spread: 60,
+                origin: { y: 0.7 }
+            });
+
+            // Reset Input Form
+            document.getElementById('image-upload').value = '';
+            document.getElementById('pick-name').value = '';
+            activePickImage = null;
         }
 
-        // Initialize application on window load
-        window.onload = () => {
-            window.app = new GameApp();
-        };
+        // Trigger Reactions (OHNE Timer-Reset)
+        function triggerEmoji(emoji) {
+            const canvas = document.getElementById('board-canvas');
+            const el = document.createElement('div');
+            el.className = 'floating-emoji text-3xl';
+            el.innerText = emoji;
+            
+            // Zufällige Position auf dem Board
+            const x = Math.random() * (canvas.clientWidth - 40);
+            const y = Math.random() * (canvas.clientHeight - 40);
+            
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+
+            canvas.appendChild(el);
+
+            setTimeout(() => {
+                el.remove();
+            }, 1200);
+        }
     </script>
 </body>
 </html>
